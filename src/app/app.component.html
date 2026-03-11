@@ -1,0 +1,12 @@
+<div class="app-container">
+  <div class="app-header">
+    <div *ngIf="!isHomePage"(click)="navigateHome()" class="home-button clickable">
+      Home
+    </div>
+    <div *ngIf="centralService.title$  | async; let currentVideoTitle" class="title-container">
+      <span class="current-video-title">You are viewing: {{currentVideoTitle}}</span>
+   </div>
+  </div>
+  <router-outlet></router-outlet>
+  <app-spinner *ngIf="LoadingService.loading$ | async" id='loadingIndicator' class="app-spinner"></app-spinner>
+</div>

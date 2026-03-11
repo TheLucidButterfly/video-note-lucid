@@ -1,0 +1,32 @@
+<!-- *Legacy -->
+<!-- <div class="appContainer">
+  <div class="devToolContainer">
+    <span (click)="storageService.clearAllVideos(); refreshVideoList();" class="delete-all-button clickable">Delete All</span>
+    <br>
+    <span (click)="navigateToDevTools()" class="savedAllDataButton clickable">View Saved Data</span>
+  </div>
+  <div class="gridContainer">
+    <div routerLink="/uploader" class="gridTile clickable">+</div>
+    <div *ngFor="let video of savedVideos; let i = index" (click)="navigateToVideoScreen(i)" class="gridTile clickable">
+      <span class="tileSpan">{{video?.name}}</span>
+    </div>
+  </div>
+</div> -->
+<app-notes-limit-dialog *ngIf="showDialog" class="dialog" [currentView]="'activateForm'" (dialogOpen)="showDialog = $event"></app-notes-limit-dialog>
+
+<div class="appContainer">
+  <div *ngIf="true" class="devToolContainer">
+    <span (click)="storageService.clearAllVideoPaths(); refreshVideoPathList();" class="delete-all-button clickable">Delete All</span>
+    <br>
+    <span (click)="navigateToDevTools()" class="savedAllDataButton clickable">View Saved Data</span>
+    <br>
+    <span *ngIf="!centralService.isPremiumUser()" (click)="showDialog = true" class="activateButton clickable">Activate</span>
+  </div>
+  <div class="gridContainer">
+    <div routerLink="/uploader" class="gridTile clickable">+</div>
+    <div *ngFor="let path of storedPaths; let i = index"  class="gridTile">
+      <span class="delete-button clickable" (click)="deleteVideoPath(i)">X</span>
+      <span class="tileSpan clickable" (click)="nagivateToUrlScreen(i)">{{path.path | fileNameFromPath}}</span>
+    </div>
+  </div>
+</div>

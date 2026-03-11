@@ -1,0 +1,237 @@
+import { Injectable } from '@angular/core';
+import { get, set } from 'idb-keyval';
+import { Observable, of, from, switchMap, map, take } from 'rxjs';
+import { UtilityService } from './utility.service';
+import { NgxFileDropEntry } from 'ngx-file-drop';
+import { SavedVideo } from '../interfaces/saved-video.interface';
+import { TimeSignatureObject } from '../interfaces/time-signature-object.interface';
+import { LoadingNotificationService } from './loading-notification/loading-notification.service';
+import { UserData } from '../interfaces/user-data.interface';
+import { SavedPathsMock } from 'src/mocks/savedPaths/saved-paths.mock';
+import { Note, PathNotes } from '../interfaces/video-paths.interface';
+
+
+@Injectable({
+  providedIn: 'root'
+})
+export class StorageService {
+
+  constructor(
+    private utilityService: UtilityService,
+    private loadingService: LoadingNotificationService) {
+    // set('userData',JSON.stringify({videoLengthUsed:0, videoStorageUsed:0}))
+  }
+
+  public getVideos(): Observable<PathNotes[]> {
+    return from(get('videoPaths').then((savedVideos: any) => {
+      if (savedVideos) {
+        return JSON.parse(savedVideos)
+      }
+      else {
+        this.clearAllVideos();
+      }
+    }));
+  }
+
+  /**
+   * Helper function that returns all video paths
+   * @Compatability Electron
+   * @returns 
+   * 
+   */
+  public getVideoPaths(): Observable<any[]> {
+    return from(get('videoPaths').then((savedVideoPaths: any) => {
+      if (savedVideoPaths) {
+        console.log('found paths and returning:',savedVideoPaths)
+        return JSON.parse(savedVideoPaths)
+      }
+      else {
+        // Legacy
+        // this.clearAllVideos();
+
+        // Modern
+        this.clearAllVideoPaths();
+      }
+    }));
+  }
+
+  /** 
+   * Returns all(superset) of the users data from storage
+   * @Compatability Browser & Electron
+  */
+  public getUserData() {
+    return from(get('userData').then(userData => JSON.parse(userData)))
+  }
+
+  public getSavedPaths() {
+    return from(get('videoPaths').then(paths => {return paths ? JSON.parse(paths) :  undefined}))
+  }
+
+  /**
+   * Set the localstorage initial values for saved-video method
+   * @Compatability Browser & Electron
+   */
+  public clearAllVideos() {
+    set('videos', '[]')
+    set('userData', '{}')
+  }
+
+  /**
+   * Set the localstorage initial values for saved-paths method
+   * @Compatability Electron only
+   */
+  public clearAllVideoPaths() {
+    set('videoPaths', '[]') // set('videoPaths', JSON.stringify(SavedPathsMock))
+    set('userData', '{}')
+  }
+
+  /**
+   * 
+   * @Compatability Browser & Electron
+   * @param extractedVideoArray 
+   * @returns 
+   */
+  private saveExtractedVideos(extractedVideoArray: SavedVideo[]): Observable<any> {
+    // this.clearAllVideos()
+    return from(get('videos')
+      .then((savedVideos: any) => {
+        // TODO: clean this up
+        if (!savedVideos) {
+          savedVideos = new Array()
+        }
+        try {
+          savedVideos = JSON.parse(savedVideos)
+        } catch (error) {
+
+        }
+        let tempList: SavedVideo[] = new Array()
+        tempList = savedVideos.concat(extractedVideoArray)
+        return set('videos', JSON.stringify(tempList))
+          .then(() => {
+            return tempList
+          })
+      }
+      ))
+  }
+
+  /**
+   * 
+   * @param extractedVideoPathArray 
+   * @Compatability Electron only
+   * @returns Observable<any>
+   */
+  saveExtractedVideoPaths(extractedVideoPathArray: SavedVideo[]): Observable<any> {
+    return from(get('videoPaths')
+      .then((savedVideoPaths: any) => {
+        // TODO: clean this up
+        if (!savedVideoPaths) {
+          savedVideoPaths = new Array();
+        }
+        try {
+          savedVideoPaths = JSON.parse(savedVideoPaths)
+        } catch (error) {
+
+        }
+        let tempList: SavedVideo[] = new Array()
+        tempList = savedVideoPaths.concat(extractedVideoPathArray);
+
+        return set('videoPaths', JSON.stringify(tempList))
+          .then(() => {
+            return tempList;
+          })
+      }
+      ))
+  }
+
+
+  deleteVideoPathAtIndex(index: number){
+    return from(get('videoPaths')
+      .then((savedVideoPaths: any) => {
+        let mutatedArrayStringified = JSON.parse(savedVideoPaths).length > 1 ? JSON.stringify(JSON.parse(savedVideoPaths).splice(index, 1)) : JSON.stringify([]);
+        return set('videoPaths', mutatedArrayStringified)
+          .then((savedList) => {
+            this.loadingService.hide();
+            return savedList;
+          })
+      }
+      ))
+  }
+
+  saveNotesToVideoObject(index: number, notesArray: TimeSignatureObject[]) {
+    this.loadingService.show('Saving');
+    this.getVideos().subscribe((videos: PathNotes[]) => {
+      videos[index].notes = notesArray;
+      this.updateVideoObject(videos).subscribe(() => {
+        this.loadingService.hide();
+      });
+    })
+  }
+
+  getNotes(index:number):Observable<Note[]> {
+    return this.getVideos().pipe(
+      take(1),
+      map(videos => videos[index].notes)
+    )
+  }
+
+  private updateVideoObject(videos: PathNotes[]) {
+    return from(set('videoPaths', JSON.stringify(videos))
+      .then(() => {
+        // setting completed
+        return of(videos)
+      }))
+  }
+
+  saveUploadedVideo(videoList: NgxFileDropEntry[]): Observable<any[]> {
+    return from(this.utilityService.extractVideoResources(videoList))
+      .pipe(
+        switchMap((extractedVideoArray: SavedVideo[]) => {
+          return this.saveExtractedVideos(extractedVideoArray)
+        })
+      )
+  }
+
+  /**
+   * 
+   * @compatability Browser & Electron
+   */
+  saveUploadedVideoPath(videoPathList: NgxFileDropEntry[]) {
+    return from(this.utilityService.extractVideoResources(videoPathList))
+    // .pipe(
+    //   switchMap((extractedVideoArray: SavedVideo[]) => {
+    //     return this.saveExtractedVideos(extractedVideoArray)
+    //   })
+    // )
+  }
+
+  
+  saveUserData(userFileSizes: any[]) {
+    let memoryBytesToAdd = userFileSizes.reduce((accumulator, file) => accumulator + file.size, 0);
+    this.getUserData().subscribe(
+      (userData: UserData) => {
+        set('userData', JSON.stringify({ videoLengthUsed: (userData.videoLengthUsed | 0) + (userFileSizes.length + 0), videoStorageUsed: (userData.videoStorageUsed | 0) + (memoryBytesToAdd | 0) }))
+      }
+    )
+  }
+
+  // saveUserData_Paths(userFileSizes: any[]){
+  //   let memoryBytesToAdd = userFileSizes.reduce((accumulator, file) => accumulator + file.size, 0);
+  //   this.getUserData().subscribe(
+  //     (userData: UserData) => {
+  //       set('userData', JSON.stringify({ videoLengthUsed: (userData.videoLengthUsed | 0) + (userFileSizes.length + 0), videoStorageUsed: (userData.videoStorageUsed | 0) + (memoryBytesToAdd | 0) }))
+  //     }
+  //   )
+  // }
+
+  loadPremiumStatus(): Observable<any>{
+      // Call the exposed Electron API function
+      return from(
+        (window as any).premiumAPI.loadPremiumStatus()
+        .then((result: any) => result)
+        .catch((error: any) => {
+          console.error('LOG: Error invoking loadPremiumStatus:', error);
+        })
+      )
+  }
+
+}

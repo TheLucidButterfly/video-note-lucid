@@ -1,0 +1,62 @@
+.container-column {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  height: 100%;
+}
+
+.selectedSignature {
+  color: green;
+}
+
+.time-signature-list {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  width: 95%;
+}
+
+.noteBarSignatureItem {
+  /* margin: 0px !important; */
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+.text-area {
+  background-color: black;
+  color: white;
+  width: 720px;
+  overflow: hidden;
+  resize: none;
+  width: calc(51vw - 20px);
+  height: 100%;
+  resize: none;
+}
+
+
+::ng-deep   pagination-controls {
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+  }
+
+  ::ng-deep   .ngx-pagination a {
+    color: white;
+  }
+
+  ::ng-deep   .ngx-pagination .current  {
+    background: darkcyan !important;
+    color: yellow;
+    border-radius: 12px;
+  }
+
+.populated-signature {
+  color:green;
+}
+
+.selected-signature {
+  color:white;
+}
