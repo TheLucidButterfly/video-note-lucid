@@ -62,9 +62,32 @@ export class UploaderComponent {
     }
 
     electronApi.ipcRenderer.invoke('openDialog').then((filePaths: string[]) => {
+      // terminate if no files were selected
+      if (!filePaths?.length) {
+        return;
+      }
+
       this.uploadedFileNames = this.getUploadedFileNamesList(filePaths);
-      this.storageService.saveExtractedVideoPaths(this.createPathObject(filePaths) as any);
+
+      const newUploadCount = filePaths.length;
+      this.storageService
+        .saveExtractedVideoPaths(this.createPathObject(filePaths) as any)
+        .subscribe((savedPaths: any[]) => {
+          this.navigateToFirstNewUpload(savedPaths, newUploadCount);
+        });
     });
+  }
+
+  /**
+   * Navigates to the first newly uploaded path.
+   *
+   * `saveExtractedVideoPaths` returns the full saved list (existing + new),
+   * so we subtract `newUploadCount` from the final list length to find where
+   * the new uploads begin.
+   */
+  private navigateToFirstNewUpload(savedPaths: any[] | undefined, newUploadCount: number): void {
+    const firstNewPathIndex = Math.max(0, (savedPaths?.length || 0) - newUploadCount);
+    this.router.navigate(['video'], { queryParams: { index: firstNewPathIndex } });
   }
 
   getUploadedFileNamesList(filePaths: string[]): string[]{
