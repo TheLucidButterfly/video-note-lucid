@@ -23,7 +23,7 @@
     <span *ngIf="!centralService.isPremiumUser()" (click)="showDialog = true" class="activateButton clickable">Activate</span>
   </div>
   <div class="gridContainer">
-    <div routerLink="/uploader" class="gridTile clickable">+</div>
+    <div (click)="openUploader()" class="gridTile clickable">+</div>
     <div *ngFor="let path of storedPaths; let i = index"  class="gridTile">
       <span class="delete-button clickable" (click)="deleteVideoPath(i)">X</span>
       <span class="tileSpan clickable" (click)="nagivateToUrlScreen(i)">{{path.path | fileNameFromPath}}</span>

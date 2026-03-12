@@ -1,16 +1,16 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { UploaderComponent } from './uploader.component';
+import { InfoComponent } from './info.component';
 
-describe('UploaderComponent', () => {
-  let component: UploaderComponent;
-  let fixture: ComponentFixture<UploaderComponent>;
+describe('InfoComponent', () => {
+  let component: InfoComponent;
+  let fixture: ComponentFixture<InfoComponent>;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      declarations: [UploaderComponent]
+      declarations: [InfoComponent]
     });
-    fixture = TestBed.createComponent(UploaderComponent);
+    fixture = TestBed.createComponent(InfoComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

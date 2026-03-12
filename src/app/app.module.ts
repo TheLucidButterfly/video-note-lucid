@@ -5,7 +5,7 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { HomeViewComponent } from './views/home-view/home-view.component';
 import { NgxFileDropModule } from 'ngx-file-drop';
-import { UploaderComponent } from './views/uploader/uploader.component';
+import { InfoComponent } from './views/info/info.component';
 import { VideoComponent } from './views/video/video.component';
 import { VgCoreModule } from '@videogular/ngx-videogular/core';
 import { VgControlsModule } from '@videogular/ngx-videogular/controls';
@@ -27,7 +27,7 @@ import { NotesLimitDialogComponent } from './plugins/dialog/dialog.component'; /
   declarations: [
     AppComponent,
     HomeViewComponent,
-    UploaderComponent,
+    InfoComponent,
     VideoComponent,
     SpinnerComponent,
     TimeSignatureComponent,

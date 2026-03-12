@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { LoadingNotificationService } from 'src/app/services/loading-notification/loading-notification.service';
 import { Observable } from 'rxjs';
 import { CentralService } from 'src/app/services/central.service';
+import { VideoUploadService } from 'src/app/services/video-upload.service';
 
 @Component({
   selector: 'app-home-view',
@@ -28,7 +29,8 @@ export class HomeViewComponent {
     public storageService: StorageService,
     public router: Router,
     private loader: LoadingNotificationService,
-    public centralService: CentralService) { }
+    public centralService: CentralService,
+    private videoUploadService: VideoUploadService) { }
 
   ngOnInit(): void {
     this.loadStoredPaths();
@@ -78,6 +80,10 @@ export class HomeViewComponent {
 
   navigateToDevTools() {
     this.router.navigate(['developer-tools']);
+  }
+
+  openUploader() {
+    this.videoUploadService.selectVideoAndNavigate();
   }
 
   isLoading(loading: boolean) {

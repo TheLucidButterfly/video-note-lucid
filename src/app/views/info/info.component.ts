@@ -10,12 +10,12 @@ import { VideoUploadService } from 'src/app/services/video-upload.service';
 // import { FileDialogService } from 'src/app/services/file-dialog.service';
 
 @Component({
-  selector: 'app-uploader',
-  templateUrl: './uploader.component.html',
-  styleUrls: ['./uploader.component.css']
+  selector: 'app-info',
+  templateUrl: './info.component.html',
+  styleUrls: ['./info.component.css']
 })
 
-export class UploaderComponent {
+export class InfoComponent {
 
   droppedVideoList: NgxFileDropEntry[] = [];
   userData!: UserData;
@@ -65,6 +65,28 @@ export class UploaderComponent {
     this.uploadedFileNames = uploadResult.selectedFileNames;
     this.router.navigate(['video'], { queryParams: { index: uploadResult.firstNewPathIndex } });
   }
+
+  /*
+  Legacy uploader flow kept for reference:
+
+  selectVideo() {
+    const electronApi = (window as any)?.electron;
+    if (!electronApi?.ipcRenderer?.invoke) return;
+
+    electronApi.ipcRenderer.invoke('openDialog').then((filePaths: string[]) => {
+      if (!filePaths?.length) return;
+
+      this.uploadedFileNames = this.getUploadedFileNamesList(filePaths);
+      const newUploadCount = filePaths.length;
+      this.storageService
+        .saveExtractedVideoPaths(this.createPathObject(filePaths) as any)
+        .subscribe((savedPaths: any[]) => {
+          const firstNewPathIndex = Math.max(0, (savedPaths?.length || 0) - newUploadCount);
+          this.router.navigate(['video'], { queryParams: { index: firstNewPathIndex } });
+        });
+    });
+  }
+  */
 
   private setUserData() {
     this.storageService.getUserData().subscribe(
