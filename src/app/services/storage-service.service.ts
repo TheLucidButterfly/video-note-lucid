@@ -147,11 +147,19 @@ export class StorageService {
   deleteVideoPathAtIndex(index: number){
     return from(get('videoPaths')
       .then((savedVideoPaths: any) => {
-        let mutatedArrayStringified = JSON.parse(savedVideoPaths).length > 1 ? JSON.stringify(JSON.parse(savedVideoPaths).splice(index, 1)) : JSON.stringify([]);
-        return set('videoPaths', mutatedArrayStringified)
-          .then((savedList) => {
+        const parsedPaths = savedVideoPaths ? JSON.parse(savedVideoPaths) : [];
+
+        if (!Array.isArray(parsedPaths) || index < 0 || index >= parsedPaths.length) {
+          return parsedPaths;
+        }
+
+        const updatedPaths = [...parsedPaths];
+        updatedPaths.splice(index, 1);
+
+        return set('videoPaths', JSON.stringify(updatedPaths))
+          .then(() => {
             this.loadingService.hide();
-            return savedList;
+            return updatedPaths;
           })
       }
       ))

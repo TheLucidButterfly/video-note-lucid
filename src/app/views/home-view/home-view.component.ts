@@ -24,6 +24,9 @@ export class HomeViewComponent {
   loading = false;
   devMode = true;
   showDialog = false;
+  showDeleteDialog = false;
+  pendingDeleteIndex: number | null = null;
+  pendingDeleteTitle = '';
 
   constructor(
     public storageService: StorageService,
@@ -100,6 +103,29 @@ export class HomeViewComponent {
     this.storageService.deleteVideoPathAtIndex(index).subscribe(res => {
       this.loadStoredPaths();
     })
+  }
+
+  requestDeleteVideoPath(index: number, path: string) {
+    this.pendingDeleteIndex = index;
+    this.pendingDeleteTitle = this.getFileNameFromPath(path);
+    this.showDeleteDialog = true;
+  }
+
+  handleDeleteConfirmation(confirmed: boolean) {
+    const indexToDelete = this.pendingDeleteIndex;
+    this.showDeleteDialog = false;
+
+    if (confirmed && indexToDelete !== null) {
+      this.deleteVideoPath(indexToDelete);
+    }
+
+    this.pendingDeleteIndex = null;
+    this.pendingDeleteTitle = '';
+  }
+
+  private getFileNameFromPath(path: string): string {
+    const pathParts = path.split(/[/\\]/);
+    return pathParts[pathParts.length - 1] || path;
   }
 
   deleteAllVideoPaths() {

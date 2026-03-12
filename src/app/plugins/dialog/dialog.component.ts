@@ -8,8 +8,13 @@ import { ActivationResponse } from 'src/app/interfaces/activation-response.inter
   styleUrls: ['./dialog.component.css']
 })
 export class NotesLimitDialogComponent {
-  @Input() currentView: 'limitExceeded' | 'activateForm' = 'limitExceeded'; // Determines the current view
+  @Input() currentView: 'limitExceeded' | 'activateForm' | 'confirm' = 'limitExceeded'; // Determines the current view
+  @Input() titleText = 'Are you sure?';
+  @Input() messageText = '';
+  @Input() confirmText = 'Yes';
+  @Input() cancelText = 'No';
   @Output() dialogOpen = new EventEmitter();
+  @Output() confirmed = new EventEmitter<boolean>();
   
   isDialogVisible: boolean = true;
   showActivateForm: boolean = false;
@@ -19,6 +24,16 @@ export class NotesLimitDialogComponent {
   closeDialog() {
     this.isDialogVisible = false;
     this.dialogOpen.emit(false);
+  }
+
+  confirmYes() {
+    this.confirmed.emit(true);
+    this.closeDialog();
+  }
+
+  confirmNo() {
+    this.confirmed.emit(false);
+    this.closeDialog();
   }
 
   redirectToBuy() {
