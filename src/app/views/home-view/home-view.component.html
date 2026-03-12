@@ -16,7 +16,7 @@
 
 <div class="appContainer">
   <div *ngIf="true" class="devToolContainer">
-    <span (click)="storageService.clearAllVideoPaths(); refreshVideoPathList();" class="delete-all-button clickable">Delete All</span>
+    <span (click)="deleteAllVideoPaths();" class="delete-all-button clickable">Delete All</span>
     <br>
     <span (click)="navigateToDevTools()" class="savedAllDataButton clickable">View Saved Data</span>
     <br>

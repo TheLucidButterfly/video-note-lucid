@@ -31,16 +31,24 @@ export class HomeViewComponent {
     public centralService: CentralService) { }
 
   ngOnInit(): void {
-    // *Legacy
-    // this.refreshVideoList()
+    this.loadStoredPaths();
+  }
 
+  private loadStoredPaths() {
     this.refreshVideoPathList().subscribe((storedPaths) => {
-      console.log('storedPaths:', storedPaths)
-      storedPaths ? this.storedPaths = storedPaths : this.storageService.clearAllVideoPaths();
+      this.storedPaths = storedPaths ?? [];
       this.isLoading(false);
     })
   }
 
+  /**
+   * Starts loading and returns saved video paths.
+   *
+   * Usage note:
+   * This method sets loading to true via isLoading(true).
+   * After the async work finishes, you must call isLoading(false)
+   * (for example in subscribe/complete/finalize) to stop the spinner.
+   */
   refreshVideoPathList(): Observable<any> {
     this.isLoading(true);
     return this.storageService.getSavedPaths()
@@ -84,8 +92,13 @@ export class HomeViewComponent {
 
   deleteVideoPath(index: number) {
     this.storageService.deleteVideoPathAtIndex(index).subscribe(res => {
-      this.refreshVideoPathList();
+      this.loadStoredPaths();
     })
+  }
+
+  deleteAllVideoPaths() {
+    this.storageService.clearAllVideoPaths();
+    this.loadStoredPaths();
   }
 
   // TODO: unlock the feature
