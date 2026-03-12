@@ -4,7 +4,11 @@
       Home
     </div>
     <div *ngIf="centralService.title$  | async; let currentVideoTitle" class="title-container">
-      <span class="current-video-title">You are viewing: {{currentVideoTitle}}</span>
+      <div class="current-video-title" [title]="currentVideoTitle || ''">
+        <span class="title-label">You are viewing:</span>
+        <span class="title-path">{{ formatDisplayPath(currentVideoTitle) }}</span>
+        <span class="title-hint">Hover for full path</span>
+      </div>
    </div>
   </div>
   <router-outlet></router-outlet>

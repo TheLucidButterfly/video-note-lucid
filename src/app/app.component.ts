@@ -13,6 +13,7 @@ import { switchMap } from 'rxjs';
 })
 export class AppComponent {
   isHomePage = false;
+  private readonly displayedPathLength = 50;
 
   constructor(
     private router: Router,
@@ -39,5 +40,17 @@ export class AppComponent {
   navigateHome() {
     this.router.navigate(['/home']);
     this.centralService.setTitle('')
+  }
+
+  formatDisplayPath(path: string | null | undefined): string {
+    if (!path) {
+      return '';
+    }
+
+    if (path.length <= this.displayedPathLength) {
+      return path;
+    }
+
+    return `...${path.slice(-this.displayedPathLength)}`;
   }
 }
