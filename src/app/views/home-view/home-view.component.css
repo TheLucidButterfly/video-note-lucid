@@ -36,6 +36,7 @@
   text-align: center;
   border-radius: 30px;
   position: relative;
+  overflow: hidden;
 }
 
 .gridTile:first-of-type {
@@ -71,11 +72,21 @@
 
 .delete-button {
   position: absolute;
-  top: 5px;
-  left: 5px;
-  background: black;
-  border: aquamarine solid 1px;
-  border-radius: 10px;
+  top: 0;
+  right: 0;
+  left: auto;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  color: white;
+  border-radius: 0 30px 0 12px;
+  border-left: 1px solid rgba(255, 255, 255, 0.25);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .dialog {
