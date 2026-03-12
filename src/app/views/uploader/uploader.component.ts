@@ -13,8 +13,6 @@ declare global {
   }
 }
 
-const { ipcRenderer } = window.electron;
-
 @Component({
   selector: 'app-uploader',
   templateUrl: './uploader.component.html',
@@ -57,10 +55,16 @@ export class UploaderComponent {
 
   // Electron dialog
   selectVideo() {  
-    (window as any).electron.ipcRenderer.invoke('openDialog').then((filePaths: string[]) => {
-          this.uploadedFileNames = this.getUploadedFileNamesList(filePaths);
-          this.storageService.saveExtractedVideoPaths(this.createPathObject(filePaths) as any);
-        });
+    const electronApi = (window as any)?.electron;
+    if (!electronApi?.ipcRenderer?.invoke) {
+      console.warn('Electron IPC is not available in browser mode.');
+      return;
+    }
+
+    electronApi.ipcRenderer.invoke('openDialog').then((filePaths: string[]) => {
+      this.uploadedFileNames = this.getUploadedFileNamesList(filePaths);
+      this.storageService.saveExtractedVideoPaths(this.createPathObject(filePaths) as any);
+    });
   }
 
   getUploadedFileNamesList(filePaths: string[]): string[]{
