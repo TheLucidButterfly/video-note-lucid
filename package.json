@@ -20,6 +20,10 @@
       "target": [
         "dmg"
       ],
+      "hardenedRuntime": true,
+      "entitlements": "entitlements.plist",
+      "entitlementsInherit": "entitlements.plist",
+      "gatekeeperAssess": false,
       "mergeASARs": false
     },
     "dmg": {
@@ -57,7 +61,10 @@
     "package": "electron-forge package",
     "remove-builds": "rm -rf dist && rm -rf out",
     "make:mac:m-series": "npm run remove-builds && ng build --configuration=production && electron-builder --mac dmg --arm64",
+    "make:mac:m-series:signed": "npm run remove-builds && ng build --configuration=production && CSC_IDENTITY_AUTO_DISCOVERY=true electron-builder --mac dmg --arm64",
     "make:mac:intel": "npm run remove-builds && ng build --configuration=production && electron-builder --mac dmg --x64",
+    "make:mac:intel:signed": "npm run remove-builds && ng build --configuration=production && CSC_IDENTITY_AUTO_DISCOVERY=true electron-builder --mac dmg --x64",
+    "make:mac:universal:signed": "npm run remove-builds && ng build --configuration=production && CSC_IDENTITY_AUTO_DISCOVERY=true electron-builder --mac dmg --universal",
     "dist": "build",
     "deploy": "rm -rf release && ng build && electron-builder  --universal",
     "deploy:gh-pages": "ng build && npx angular-cli-ghpages --dir=dist/video-notes",

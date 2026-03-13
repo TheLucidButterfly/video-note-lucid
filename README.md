@@ -39,21 +39,46 @@ Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To u
 To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
 
 
-## App Signing info
+## App Signing (macOS Trusted Build)
 
-This needs to be added eventually
+To avoid the **"Unknown Developer"** warning, build with a valid Apple Developer ID certificate and notarization credentials.
 
-"osxSign": {
-          "identity": "[your apple identity]",
-          "hardened-runtime": true,
-          "entitlements": "entitlements.plist",
-          "entitlements-inherit": "entitlements.plist",
-          "signature-flags": "library"
-        },
-        "osxNotarize": {
-          "appleId": "[your app ID]",
-          "appleIdPassword": "pbfz-qtbs-wgpe-qtvh"
-        }
+### 1) Required local setup (one-time)
+
+- Install your **Developer ID Application** certificate into Keychain Access (login keychain).
+- Export these environment variables in your shell:
+
+```bash
+export APPLE_ID="your-apple-id@example.com"
+export APPLE_APP_SPECIFIC_PASSWORD="xxxx-xxxx-xxxx-xxxx"
+export APPLE_TEAM_ID="YOUR_TEAM_ID"
+```
+
+### 2) Build commands
+
+- Apple Silicon DMG (M-series):
+
+```bash
+npm run make:mac:m-series:signed
+```
+
+- Intel DMG:
+
+```bash
+npm run make:mac:intel:signed
+```
+
+- Universal DMG:
+
+```bash
+npm run make:mac:universal:signed
+```
+
+### 3) Output
+
+Artifacts are created in `release/`.
+
+If signing credentials are missing, electron-builder falls back to ad-hoc signing and macOS may still show the privacy warning.
 
 
 # How to use
