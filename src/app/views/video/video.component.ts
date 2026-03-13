@@ -21,6 +21,7 @@ export class VideoComponent implements OnInit {
   viewRef!: ViewContainerRef;
 
   src: any = undefined;
+  currentVideoPath = '';
   api!: VgApiService;
   // *legacy
   // savedVideoIndex!: number;
@@ -41,6 +42,7 @@ export class VideoComponent implements OnInit {
 
   showDialog = false;
   premiumAccount = false;
+  showExportDialog = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -107,7 +109,8 @@ export class VideoComponent implements OnInit {
       switchMap(queryParams => {
         return this.storageService.getVideoPaths().pipe(
           switchMap(storedPaths => {
-            this.src = `file://${storedPaths[queryParams['index']].path}`
+            this.currentVideoPath = storedPaths[queryParams['index']].path;
+            this.src = `file://${this.currentVideoPath}`
             this.savedVideoUrlIndex = queryParams['index'];
             this.centralService.setTitle(storedPaths[queryParams['index']]?.path);
             if (storedPaths[this.savedVideoUrlIndex]?.notes) {
@@ -355,10 +358,104 @@ export class VideoComponent implements OnInit {
     }
 
   }
-  exportNotes(index: number){
-    this.storageService.getNotes(index).subscribe(notes => {
-      console.log(notes)
-    })
+
+  exportNotes(format: 'txt' | 'md' | 'csv') {
+    const sortedNotes = [...this.notesArray].sort((a, b) => Number(a.timeSignature) - Number(b.timeSignature));
+
+    if (!sortedNotes.length) {
+      alert('No notes to export.');
+      return;
+    }
+
+    const fileBaseName = this.buildExportFileBaseName();
+    const payload = this.buildExportPayload(sortedNotes, format);
+    this.downloadTextFile(`${fileBaseName}.${payload.extension}`, payload.content, payload.mimeType);
+  }
+
+  openExportDialog() {
+    this.showExportDialog = true;
+  }
+
+  closeExportDialog() {
+    this.showExportDialog = false;
+  }
+
+  handleExportFormat(format: 'txt' | 'md' | 'csv') {
+    this.exportNotes(format);
+    this.closeExportDialog();
+  }
+
+  private buildExportFileBaseName(): string {
+    const fallbackName = 'video-notes';
+    const fileName = this.currentVideoPath ? this.getFileNameFromPath(this.currentVideoPath) : fallbackName;
+    const withoutExtension = fileName.replace(/\.[^/.]+$/, '');
+    const sanitized = withoutExtension.replace(/[<>:"/\\|?*\x00-\x1F]/g, '_').trim();
+    return `${sanitized || fallbackName}-notes`;
+  }
+
+  private getFileNameFromPath(path: string): string {
+    const pathParts = path.split(/[/\\]/);
+    return pathParts[pathParts.length - 1] || path;
+  }
+
+  private buildExportPayload(notes: TimeSignatureObject[], format: 'txt' | 'md' | 'csv') {
+    if (format === 'txt') {
+      return {
+        extension: 'txt',
+        mimeType: 'text/plain;charset=utf-8',
+        content: notes
+          .map(note => `${this.formatNoteTimestamp(note.timeSignature)} – ${note.notes}`)
+          .join('\n')
+      };
+    }
+
+    if (format === 'md') {
+      return {
+        extension: 'md',
+        mimeType: 'text/markdown;charset=utf-8',
+        content: notes
+          .map(note => `- ${this.formatNoteTimestamp(note.timeSignature)} – ${note.notes}`)
+          .join('\n')
+      };
+    }
+
+    return {
+      extension: 'csv',
+      mimeType: 'text/csv;charset=utf-8',
+      content: ['timestamp,note']
+        .concat(notes.map(note => `${this.escapeCsv(this.formatNoteTimestamp(note.timeSignature))},${this.escapeCsv(note.notes || '')}`))
+        .join('\n')
+    };
+  }
+
+  private formatNoteTimestamp(timeSignature: string | number): string {
+    const totalSeconds = Math.max(0, Math.floor(Number(timeSignature) || 0));
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    if (hours > 0) {
+      return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }
+
+  private escapeCsv(value: string): string {
+    if (/[",\n]/.test(value)) {
+      return `"${value.replace(/"/g, '""')}"`;
+    }
+    return value;
+  }
+
+  private downloadTextFile(fileName: string, content: string, mimeType: string): void {
+    const blob = new Blob([content], { type: mimeType });
+    const downloadUrl = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = downloadUrl;
+    anchor.download = fileName;
+    anchor.click();
+    URL.revokeObjectURL(downloadUrl);
   }
 
 }

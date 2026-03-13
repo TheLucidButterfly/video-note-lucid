@@ -6,7 +6,10 @@
   "license": "MIT",
   "build": {
     "files": [
-      "dist/**/*"
+      "dist/**/*",
+      "app.js",
+      "preload.js",
+      "electron-api/**/*"
     ],
     "appId": "com.vide-note.app",
     "directories": {
@@ -53,7 +56,7 @@
     "test": "ng test",
     "package": "electron-forge package",
     "remove-builds": "rm -rf dist && rm -rf out",
-    "make:mac:m-series": "npm run remove-builds && ng build --configuration=production && electron-forge make  --config ./forge.config.js",
+    "make:mac:m-series": "npm run remove-builds && ng build --configuration=production && electron-forge make --platform=darwin --arch=arm64 --config ./forge.config.js",
     "make:mac:intel": "electron-forge make --arch=x64",
     "dist": "build",
     "deploy": "rm -rf release && ng build && electron-builder  --universal",
@@ -86,7 +89,10 @@
     "@angular/compiler-cli": "^16.2.0",
     "@electron-forge/cli": "^7.6.0",
     "@electron-forge/maker-deb": "^7.6.0",
+    "@electron-forge/maker-dmg": "^7.11.1",
     "@electron-forge/maker-rpm": "^7.6.0",
+    "@electron-forge/maker-squirrel": "^7.11.1",
+    "@electron-forge/maker-zip": "^7.11.1",
     "@electron-forge/plugin-auto-unpack-natives": "^7.6.0",
     "@electron/osx-sign": "^1.0.5",
     "@types/core-js": "^2.5.6",

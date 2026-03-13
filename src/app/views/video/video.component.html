@@ -87,6 +87,18 @@
         <span (click)="saveAllNotes()" class="save-button button">Save</span>
         <span (click)="deleteButton()" class="delete-button button"
             [ngClass]="{'disabledButton': onKnownSignature === false }">Delete</span>
-        <span (click)="exportNotes(savedVideoUrlIndex)" class="export-button button">Export notes</span>
+        <span (click)="openExportDialog()" class="export-button button">Export notes</span>
+    </div>
+</div>
+
+<div *ngIf="showExportDialog" class="export-dialog-overlay" (click)="closeExportDialog()">
+    <div class="export-dialog" (click)="$event.stopPropagation()">
+        <h3>Choose export format</h3>
+        <div class="export-dialog-buttons">
+            <button (click)="handleExportFormat('txt')">TXT</button>
+            <button (click)="handleExportFormat('md')">Markdown</button>
+            <button (click)="handleExportFormat('csv')">CSV</button>
+            <button (click)="closeExportDialog()">Cancel</button>
+        </div>
     </div>
 </div>
