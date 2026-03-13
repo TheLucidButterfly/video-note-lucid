@@ -8,7 +8,7 @@ export class CentralService {
 
   private titleSubject = new BehaviorSubject<string>('');
   title$ = this.titleSubject.asObservable();
-  isPremium: boolean = false; 
+  isPremium: boolean = true; 
 
   constructor() {  }
 
@@ -19,7 +19,7 @@ export class CentralService {
   }
 
   isPremiumUser(){
-    return false;//this.isPremium;
+    return true;
   }
 
 }
