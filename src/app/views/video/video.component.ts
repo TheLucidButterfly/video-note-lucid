@@ -415,12 +415,17 @@ export class VideoComponent implements OnInit {
   }
 
   private buildExportPayload(notes: TimeSignatureObject[], format: 'txt' | 'md' | 'csv') {
+    const exportTitle = this.getExportTitle();
+
     if (format === 'txt') {
       return {
         extension: 'txt',
         mimeType: 'text/plain;charset=utf-8',
-        content: notes
-          .map(note => `${this.formatNoteTimestamp(note.timeSignature)} – ${note.notes}`)
+        content: [
+          exportTitle,
+          '',
+          ...notes.map(note => `${this.formatNoteTimestamp(note.timeSignature)} – ${note.notes}`)
+        ]
           .join('\n')
       };
     }
@@ -429,8 +434,11 @@ export class VideoComponent implements OnInit {
       return {
         extension: 'md',
         mimeType: 'text/markdown;charset=utf-8',
-        content: notes
-          .map(note => `- ${this.formatNoteTimestamp(note.timeSignature)} – ${note.notes}`)
+        content: [
+          `# ${exportTitle}`,
+          '',
+          ...notes.map(note => `- ${this.formatNoteTimestamp(note.timeSignature)} – ${note.notes}`)
+        ]
           .join('\n')
       };
     }
@@ -438,10 +446,21 @@ export class VideoComponent implements OnInit {
     return {
       extension: 'csv',
       mimeType: 'text/csv;charset=utf-8',
-      content: ['timestamp,note']
+      content: [
+        `file_name,${this.escapeCsv(exportTitle)}`,
+        'timestamp,note'
+      ]
         .concat(notes.map(note => `${this.escapeCsv(this.formatNoteTimestamp(note.timeSignature))},${this.escapeCsv(note.notes || '')}`))
         .join('\n')
     };
+  }
+
+  private getExportTitle(): string {
+    if (this.currentVideoPath) {
+      return this.getFileNameFromPath(this.currentVideoPath);
+    }
+
+    return 'video-notes';
   }
 
   private formatNoteTimestamp(timeSignature: string | number): string {
@@ -485,7 +504,10 @@ export class VideoComponent implements OnInit {
 
     document.setFont('helvetica', 'bold');
     document.setFontSize(16);
-    document.text('Video Notes Export', margin, currentY);
+    const pdfTitle = this.currentVideoPath
+      ? this.getFileNameFromPath(this.currentVideoPath)
+      : fileName.replace(/\.pdf$/i, '');
+    document.text(pdfTitle, margin, currentY);
     currentY += 24;
 
     document.setFont('helvetica', 'normal');
