@@ -218,7 +218,24 @@ export class VideoComponent implements OnInit {
   }
 
   formatSignature(signature: any) {
-    return String(Math.floor(signature / 1000))
+    return String(this.normalizeToSeconds(signature))
+  }
+
+  formatSignatureDisplay(signature: any) {
+    return this.formatNoteTimestamp(this.normalizeToSeconds(signature));
+  }
+
+  private normalizeToSeconds(signature: any): number {
+    const numericSignature = Number(signature) || 0;
+    if (numericSignature <= 0) {
+      return 0;
+    }
+
+    if (numericSignature >= 10000) {
+      return Math.floor(numericSignature / 1000);
+    }
+
+    return Math.floor(numericSignature);
   }
 
   setDomElement() {
