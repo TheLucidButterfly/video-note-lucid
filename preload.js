@@ -39,3 +39,12 @@ contextBridge.exposeInMainWorld('premiumAPI', {
     }
   },
 });
+
+contextBridge.exposeInMainWorld('fileAPI', {
+  showSaveDialog: async (options) => {
+    return ipcRenderer.invoke('save-file-dialog', options);
+  },
+  writeFile: async (payload) => {
+    return ipcRenderer.invoke('write-file', payload);
+  },
+});

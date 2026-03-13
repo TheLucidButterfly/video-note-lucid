@@ -1,7 +1,6 @@
 const { app, BrowserWindow, dialog } = require('electron');
 // const remoteMain = require('@electron/remote/main');
 
-const url = require("url");
 const path = require("path");
 const fs = require('fs');
 
@@ -25,20 +24,21 @@ function createWindow() {
     }
   })
 
-// mainWindow.loadURL(`file://${__dirname}/index.html`); 
+// mainWindow.loadURL(`file://${__dirname}/index.html`);
 // debugging opens with localhost
 let debugging = false;
   if (debugging) {
     mainWindow.loadURL('http://localhost:4200');
     // mainWindow.loadURL('./src/index.html');
   } else {
-    mainWindow.loadURL(
-      url.format({
-        pathname: path.join(__dirname, `/dist/video-notes/index.html`),
-        protocol: "file:",
-        slashes: true
-      })
-    );
+    const indexPath = path.join(__dirname, 'dist', 'video-notes', 'index.html');
+
+    if (fs.existsSync(indexPath)) {
+      mainWindow.loadFile(indexPath);
+    } else {
+      console.error('Renderer index.html not found at:', indexPath);
+      mainWindow.loadURL('data:text/html;charset=utf-8,<h2>Build missing</h2><p>Run: npm run build:prod</p>');
+    }
   }
   mainWindow.webContents.openDevTools()
 }
@@ -52,6 +52,42 @@ ipcMain.handle('openDialog', async () => {
     properties: ['openFile', 'multiSelections']
   });
   return result.filePaths; // Returns selected file paths to Angular
+});
+
+ipcMain.handle('save-file-dialog', async (event, options) => {
+  const result = await dialog.showSaveDialog(mainWindow, {
+    title: options?.title || 'Save File',
+    defaultPath: options?.defaultPath,
+    filters: options?.filters || []
+  });
+
+  return {
+    canceled: result.canceled,
+    filePath: result.filePath || null
+  };
+});
+
+ipcMain.handle('write-file', async (event, payload) => {
+  try {
+    const filePath = payload?.filePath;
+    const data = payload?.data;
+    const encoding = payload?.encoding || 'utf8';
+
+    if (!filePath) {
+      return { success: false, error: 'Missing file path.' };
+    }
+
+    if (encoding === 'base64') {
+      fs.writeFileSync(filePath, Buffer.from(data, 'base64'));
+    } else {
+      fs.writeFileSync(filePath, data, { encoding });
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('write-file failed:', error);
+    return { success: false, error: error?.message || 'Unknown write error.' };
+  }
 });
 
 // Payments

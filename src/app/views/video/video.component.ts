@@ -7,6 +7,7 @@ import { interval, of, switchMap, takeWhile } from 'rxjs';
 import { LoadingNotificationService } from 'src/app/services/loading-notification/loading-notification.service';
 import { CentralService } from 'src/app/services/central.service';
 import { environment, uploadModes } from '../../../environments/environment';
+import { jsPDF } from 'jspdf';
 
 
 @Component({
@@ -368,7 +369,7 @@ export class VideoComponent implements OnInit {
 
   }
 
-  exportNotes(format: 'txt' | 'md' | 'csv') {
+  async exportNotes(format: 'txt' | 'md' | 'csv' | 'pdf') {
     const sortedNotes = [...this.notesArray].sort((a, b) => Number(a.timeSignature) - Number(b.timeSignature));
 
     if (!sortedNotes.length) {
@@ -377,6 +378,12 @@ export class VideoComponent implements OnInit {
     }
 
     const fileBaseName = this.buildExportFileBaseName();
+
+    if (format === 'pdf') {
+      await this.downloadPdfFile(`${fileBaseName}.pdf`, sortedNotes);
+      return;
+    }
+
     const payload = this.buildExportPayload(sortedNotes, format);
     this.downloadTextFile(`${fileBaseName}.${payload.extension}`, payload.content, payload.mimeType);
   }
@@ -389,8 +396,8 @@ export class VideoComponent implements OnInit {
     this.showExportDialog = false;
   }
 
-  handleExportFormat(format: 'txt' | 'md' | 'csv') {
-    this.exportNotes(format);
+  handleExportFormat(format: 'txt' | 'md' | 'csv' | 'pdf') {
+    void this.exportNotes(format);
     this.closeExportDialog();
   }
 
@@ -465,6 +472,82 @@ export class VideoComponent implements OnInit {
     anchor.download = fileName;
     anchor.click();
     URL.revokeObjectURL(downloadUrl);
+  }
+
+  private async downloadPdfFile(fileName: string, notes: TimeSignatureObject[]): Promise<void> {
+    const document = new jsPDF({ unit: 'pt', format: 'a4' });
+    const pageWidth = document.internal.pageSize.getWidth();
+    const pageHeight = document.internal.pageSize.getHeight();
+    const margin = 40;
+    const maxLineWidth = pageWidth - (margin * 2);
+    const lineHeight = 16;
+    let currentY = margin;
+
+    document.setFont('helvetica', 'bold');
+    document.setFontSize(16);
+    document.text('Video Notes Export', margin, currentY);
+    currentY += 24;
+
+    document.setFont('helvetica', 'normal');
+    document.setFontSize(11);
+
+    notes.forEach((note, index) => {
+      const entry = `${this.formatNoteTimestamp(note.timeSignature)} - ${note.notes || ''}`;
+      const wrappedLines = document.splitTextToSize(entry, maxLineWidth);
+
+      if (currentY + (wrappedLines.length * lineHeight) > pageHeight - margin) {
+        document.addPage();
+        currentY = margin;
+      }
+
+      document.text(wrappedLines, margin, currentY);
+      currentY += (wrappedLines.length * lineHeight);
+
+      if (index < notes.length - 1) {
+        currentY += 4;
+      }
+    });
+
+    if (this.canUseNativeSaveDialog()) {
+      const saveResult = await (window as any).fileAPI.showSaveDialog({
+        title: 'Export Notes as PDF',
+        defaultPath: fileName,
+        filters: [{ name: 'PDF', extensions: ['pdf'] }]
+      });
+
+      if (saveResult?.canceled || !saveResult?.filePath) {
+        return;
+      }
+
+      const pdfArrayBuffer = document.output('arraybuffer');
+      const writeResult = await (window as any).fileAPI.writeFile({
+        filePath: saveResult.filePath,
+        data: this.arrayBufferToBase64(pdfArrayBuffer),
+        encoding: 'base64'
+      });
+
+      if (!writeResult?.success) {
+        alert('Unable to save PDF file.');
+      }
+
+      return;
+    }
+
+    document.save(fileName);
+  }
+
+  private canUseNativeSaveDialog(): boolean {
+    return typeof (window as any)?.fileAPI?.showSaveDialog === 'function' &&
+      typeof (window as any)?.fileAPI?.writeFile === 'function';
+  }
+
+  private arrayBufferToBase64(buffer: ArrayBuffer): string {
+    const bytes = new Uint8Array(buffer);
+    let binaryString = '';
+    bytes.forEach((byte) => {
+      binaryString += String.fromCharCode(byte);
+    });
+    return btoa(binaryString);
   }
 
 }
