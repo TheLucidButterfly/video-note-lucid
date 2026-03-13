@@ -227,15 +227,7 @@ export class VideoComponent implements OnInit {
 
   private normalizeToSeconds(signature: any): number {
     const numericSignature = Number(signature) || 0;
-    if (numericSignature <= 0) {
-      return 0;
-    }
-
-    if (numericSignature >= 10000) {
-      return Math.floor(numericSignature / 1000);
-    }
-
-    return Math.floor(numericSignature);
+    return Math.max(0, Math.floor(numericSignature / 1000));
   }
 
   setDomElement() {
