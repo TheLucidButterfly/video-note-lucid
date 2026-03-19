@@ -7,6 +7,7 @@ import { TimeSignatureObject } from 'src/app/interfaces/time-signature-object.in
   styleUrls: ['./text-area.component.css']
 })
 export class TextAreaComponent {
+  private readonly notePreviewMaxLength = 72;
 
   @Input('selectedSignatureObject') selectedSignatureObject: any;
   @Input('notesArray') notesArray: TimeSignatureObject[] = [];
@@ -46,6 +47,20 @@ export class TextAreaComponent {
     if (this.api.state === 'playing') {
       this.api.pause();
     }
+  }
+
+  getNotePreview(note: string | null | undefined): string {
+    const normalized = (note || '').replace(/\s+/g, ' ').trim();
+
+    if (!normalized) {
+      return '(empty)';
+    }
+
+    if (normalized.length <= this.notePreviewMaxLength) {
+      return normalized;
+    }
+
+    return `${normalized.slice(0, this.notePreviewMaxLength).trimEnd()}...`;
   }
 
 }

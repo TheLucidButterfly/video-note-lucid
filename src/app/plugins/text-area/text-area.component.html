@@ -5,7 +5,12 @@
             class="noteBarSignatureItem clickable" (click)="selectTime(notesObject)" [ngClass]="{
                 'populated-signature': notesObject?.notes != '', 
                 'selected-signature': notesObject.timeSignature == selectedSignatureObject.timeSignature}">
-            {{notesObject.timeSignature | minutesFormat}}&nbsp;&nbsp;&nbsp;</p>
+            <span class="signature-line">
+                <span class="signature-time">{{notesObject.timeSignature | minutesFormat}}</span>
+                <span class="signature-separator">|</span>
+                <span class="signature-preview">{{ getNotePreview(notesObject?.notes) }}</span>
+            </span>
+        </p>
         <pagination-controls (pageChange)="page = $event" previousLabel="" nextLabel=""></pagination-controls>
         <!-- <span>Next</span> -->
     </span>

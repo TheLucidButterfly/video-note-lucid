@@ -79,19 +79,26 @@ export class VideoComponent implements OnInit {
 
     const container = document.querySelector('.video-text-container') as HTMLElement;
     const player = document.querySelector('.vg-player') as HTMLElement;
-    const textArea = document.querySelector('.text-area') as HTMLElement;
+    const textAreaContainer = document.querySelector('.text-area-selector-container') as HTMLElement;
+    const resizer = document.querySelector('.resizer') as HTMLElement | null;
+
+    if (!container || !player || !textAreaContainer) {
+      return;
+    }
 
     const containerRect = container.getBoundingClientRect();
     const mouseX = event.clientX;
 
     // Calculate new widths
     const newPlayerWidth = mouseX - containerRect.left;
-    const newTextAreaWidth = containerRect.width - newPlayerWidth - 5; // Subtract resizer width
+    const resizerWidth = resizer?.getBoundingClientRect().width ?? 0;
+    const newTextAreaWidth = containerRect.width - newPlayerWidth - resizerWidth;
+    const minimumPaneWidth = 220;
 
     // Set new widths
-    if (newPlayerWidth > 100 && newTextAreaWidth > 100) { // Set minimum widths
+    if (newPlayerWidth > minimumPaneWidth && newTextAreaWidth > minimumPaneWidth) {
       this.renderer.setStyle(player, 'width', `${newPlayerWidth}px`);
-      this.renderer.setStyle(textArea, 'width', `${newTextAreaWidth}px`);
+      this.renderer.setStyle(textAreaContainer, 'width', `${newTextAreaWidth}px`);
     }
   }
 

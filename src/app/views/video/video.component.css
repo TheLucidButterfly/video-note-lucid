@@ -82,19 +82,37 @@
 
 .video-text-container {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  justify-content: flex-start;
+  align-items: stretch;
   flex-direction: row;
   border: 2px solid black;
   height: 70vh;
 }
 
 .resizer {
-  width: 3px;
+  width: 30px !important;
+  min-width: 30px;
+  flex: 0 0 30px;
   height: 100%;
   cursor: col-resize;
-  background: #000;
-  background-color: grey;
+  background-color: transparent;
+  position: relative;
+}
+
+.resizer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 4px;
+  transform: translateX(-50%);
+  background-color: rgba(128, 128, 128, 0.9);
+  border-radius: 2px;
+}
+
+.resizer:hover::before {
+  background-color: rgba(173, 216, 230, 0.9);
 }
 
 .button {
@@ -109,11 +127,15 @@
 
 .text-area-selector-container {
   height: 100%;
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
 }
 
 .vg-player {
   width: calc(50vw);
   height: 100%;
+  flex: 0 0 auto;
 }
 
 
