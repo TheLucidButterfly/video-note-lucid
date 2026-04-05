@@ -20,7 +20,7 @@ import { MinutesFormatPipe } from './pipes/minutes-format.pipe';
 import { NgxPaginationModule } from 'ngx-pagination';
 import { DeveloperToolsComponent } from './views/developer-tools/developer-tools.component';
 import { FileNameFromPathPipe } from './pipes/file-name-from-path.pipe';
-import { NotesLimitDialogComponent } from './plugins/dialog/dialog.component'; // <-- import the module
+import { DialogComponent } from './plugins/dialog/dialog.component'; // <-- import the module
 
 
 @NgModule({
@@ -35,7 +35,7 @@ import { NotesLimitDialogComponent } from './plugins/dialog/dialog.component'; /
     MinutesFormatPipe,
     DeveloperToolsComponent,
     FileNameFromPathPipe,
-    NotesLimitDialogComponent
+    DialogComponent
   ],
   imports: [
     BrowserModule,

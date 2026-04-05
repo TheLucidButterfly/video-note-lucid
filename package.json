@@ -3,6 +3,8 @@
   "main": "app.js",
   "productName": "Vide-note",
   "version": "1.0.0",
+  "description": "Video note-taking app built with Angular and Electron",
+  "author": "Anthony Joseph Calderaio Jr.",
   "license": "MIT",
   "build": {
     "files": [
@@ -14,12 +16,13 @@
     "appId": "com.vide-note.app",
     "directories": {
       "output": "release",
-      "buildResources": "dist"
+      "buildResources": "build"
     },
     "mac": {
       "target": [
         "dmg"
       ],
+      "icon": "build/icon.icns",
       "hardenedRuntime": true,
       "entitlements": "entitlements.plist",
       "entitlementsInherit": "entitlements.plist",
@@ -58,13 +61,15 @@
     "build:prod": "ng build --configuration production",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
+    "test:ci": "ng test --watch=false --browsers=ChromeHeadless",
     "package": "electron-forge package",
+    "preflight:mac:signed": "node scripts/preflight-mac-signing.js",
     "remove-builds": "rm -rf dist && rm -rf out",
-    "make:mac:m-series": "npm run remove-builds && ng build --configuration=production && electron-builder --mac dmg --arm64",
-    "make:mac:m-series:signed": "npm run remove-builds && ng build --configuration=production && CSC_IDENTITY_AUTO_DISCOVERY=true electron-builder --mac dmg --arm64",
-    "make:mac:intel": "npm run remove-builds && ng build --configuration=production && electron-builder --mac dmg --x64",
-    "make:mac:intel:signed": "npm run remove-builds && ng build --configuration=production && CSC_IDENTITY_AUTO_DISCOVERY=true electron-builder --mac dmg --x64",
-    "make:mac:universal:signed": "npm run remove-builds && ng build --configuration=production && CSC_IDENTITY_AUTO_DISCOVERY=true electron-builder --mac dmg --universal",
+    "make:mac:m-series": "npm run remove-builds && ng build --configuration=production && env -u APPLE_ID -u APPLE_APP_SPECIFIC_PASSWORD -u APPLE_TEAM_ID CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac dmg --arm64",
+    "make:mac:m-series:signed": "npm run preflight:mac:signed && npm run test:ci && npm run remove-builds && ng build --configuration=production && CSC_IDENTITY_AUTO_DISCOVERY=true electron-builder --mac dmg --arm64",
+    "make:mac:intel": "npm run remove-builds && ng build --configuration=production && env -u APPLE_ID -u APPLE_APP_SPECIFIC_PASSWORD -u APPLE_TEAM_ID CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac dmg --x64",
+    "make:mac:intel:signed": "npm run preflight:mac:signed && npm run test:ci && npm run remove-builds && ng build --configuration=production && CSC_IDENTITY_AUTO_DISCOVERY=true electron-builder --mac dmg --x64",
+    "make:mac:universal:signed": "npm run preflight:mac:signed && npm run test:ci && npm run remove-builds && ng build --configuration=production && CSC_IDENTITY_AUTO_DISCOVERY=true electron-builder --mac dmg --universal",
     "dist": "build",
     "deploy": "rm -rf release && ng build && electron-builder  --universal",
     "deploy:gh-pages": "ng build && npx angular-cli-ghpages --dir=dist/video-notes",

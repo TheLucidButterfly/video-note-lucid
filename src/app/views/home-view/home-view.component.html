@@ -12,8 +12,8 @@
     </div>
   </div>
 </div> -->
-<app-notes-limit-dialog *ngIf="showDialog" class="dialog" [currentView]="'activateForm'" (dialogOpen)="showDialog = $event"></app-notes-limit-dialog>
-<app-notes-limit-dialog
+<app-dialog *ngIf="showDialog" class="dialog" [currentView]="'activateForm'" (dialogOpen)="showDialog = $event"></app-dialog>
+<app-dialog
   *ngIf="showDeleteDialog"
   class="dialog"
   [currentView]="'confirm'"
@@ -23,7 +23,7 @@
   [cancelText]="'No'"
   (dialogOpen)="showDeleteDialog = $event"
   (confirmed)="handleDeleteConfirmation($event)">
-</app-notes-limit-dialog>
+</app-dialog>
 
 <div class="appContainer">
   <div *ngIf="true" class="devToolContainer">

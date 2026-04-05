@@ -78,8 +78,9 @@
         <p>{{ messageText }}</p>
 
         <div class="dialog-buttons">
-          <button (click)="confirmNo()">{{ cancelText }}</button>
-          <button (click)="confirmYes()">{{ confirmText }}</button>
+          <button *ngIf="showStay" class="btn-ghost" (click)="stayHere()">{{ stayText }}</button>
+          <button class="btn-cancel" (click)="confirmNo()">{{ cancelText }}</button>
+          <button class="btn-action" (click)="confirmYes()">{{ confirmText }}</button>
         </div>
       </div>
     </div>

@@ -1,16 +1,16 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { NotesLimitDialogComponent } from './dialog.component';
+import { DialogComponent } from './dialog.component';
 
 describe('DialogComponent', () => {
-  let component: NotesLimitDialogComponent;
-  let fixture: ComponentFixture<NotesLimitDialogComponent>;
+  let component: DialogComponent;
+  let fixture: ComponentFixture<DialogComponent>;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      declarations: [NotesLimitDialogComponent]
+      declarations: [DialogComponent]
     });
-    fixture = TestBed.createComponent(NotesLimitDialogComponent);
+    fixture = TestBed.createComponent(DialogComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

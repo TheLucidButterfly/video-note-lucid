@@ -42,7 +42,6 @@ export class StorageService {
   public getVideoPaths(): Observable<any[]> {
     return from(get('videoPaths').then((savedVideoPaths: any) => {
       if (savedVideoPaths) {
-        console.log('found paths and returning:',savedVideoPaths)
         return JSON.parse(savedVideoPaths)
       }
       else {

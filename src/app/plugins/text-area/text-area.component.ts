@@ -14,6 +14,8 @@ export class TextAreaComponent {
   @Output() updateCurrentTimeEmit = new EventEmitter();
   @Output() updateCurrentText = new EventEmitter();
   @Output() changeSelectedTime = new EventEmitter();
+  @Output() noteDirty = new EventEmitter<string>();
+  @Input() dirtyKeys: Set<string> = new Set();
   @Input() currentTime?: any;
   @Input() api?: any;
 
@@ -27,12 +29,17 @@ export class TextAreaComponent {
     if (changes && !changes['selectedSignatureObject']) {
       // Handle ticks
       this.updateCurrentTimeEmit.emit(this.currentTime | 0);
-      this.handleChangedText(this.selectedSignatureObject.notes)
+      this.updateCurrentText.emit(
+        typeof this.selectedSignatureObject?.notes === 'string'
+          ? this.selectedSignatureObject.notes
+          : ''
+      );
     }
   }
 
   handleChangedText(event: any) {
-    this.updateCurrentText.emit(event?.target?.value || '')
+    this.updateCurrentText.emit(event?.target?.value || '');
+    this.noteDirty.emit(this.selectedSignatureObject?.timeSignature ?? '');
   }
 
   noteExists() {

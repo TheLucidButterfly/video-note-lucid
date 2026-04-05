@@ -13,4 +13,16 @@
   </div>
   <router-outlet></router-outlet>
   <app-spinner *ngIf="LoadingService.loading$ | async" id='loadingIndicator' class="app-spinner"></app-spinner>
+  <app-dialog
+    *ngIf="showUnsavedDialog"
+    [currentView]="'confirm'"
+    [showStay]="true"
+    [titleText]="'Unsaved Notes'"
+    [messageText]="'Your notes are unsaved.'"
+    [confirmText]="'Save'"
+    [cancelText]="'Discard'"
+    (dialogOpen)="showUnsavedDialog = $event"
+    (confirmed)="onUnsavedDialogConfirmed($event)"
+    (stayed)="showUnsavedDialog = false">
+  </app-dialog>
 </div>

@@ -117,7 +117,6 @@ export class UploaderComponent {
       //   let analyzedFile = await this.analyzeFileData(file);
       //   this.pendingFilesMetadata.push(analyzedFile)
       // })
-      console.log('pendingFiles:',this.pendingFiles)
     } else if (environment.uploadMode == uploadModes.saved) {
       this.pendingFiles = [];
       this.pendingFiles = droppedFiles;

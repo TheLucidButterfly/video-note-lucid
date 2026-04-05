@@ -17,11 +17,11 @@
     </vg-player>
     <div class="resizer" (mousedown)="onMouseDown($event)"></div>
     <div class="text-area-selector-container">
-        <app-notes-limit-dialog *ngIf="showDialog" [currentView]="'limitExceeded'" (dialogOpen)="showDialog = $event"></app-notes-limit-dialog>
+        <app-dialog *ngIf="showDialog" [currentView]="'limitExceeded'" (dialogOpen)="showDialog = $event"></app-dialog>
         <app-text-area [notesArray]="notesArray" [selectedSignatureObject]="selectedSignatureObject"
             [currentTime]="this.formatSignature(this?.api?.time?.current)"
             (changeSelectedTime)="selectSignature($event)" (updateCurrentTimeEmit)="handleUpdatedCurrentTime($event)"
-            (updateCurrentText)="this.textArea = $event" [api]="this.api"></app-text-area>
+            (updateCurrentText)="this.textArea = $event" (noteDirty)="markNoteDirty($event)" [dirtyKeys]="dirtyNoteKeys" [api]="this.api"></app-text-area>
     </div>
 </div>
 <div class="button-bar">

@@ -3,18 +3,21 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { ActivationResponse } from 'src/app/interfaces/activation-response.interface';
 
 @Component({
-  selector: 'app-notes-limit-dialog',
+  selector: 'app-dialog',
   templateUrl:'./dialog.component.html',
   styleUrls: ['./dialog.component.css']
 })
-export class NotesLimitDialogComponent {
+export class DialogComponent {
   @Input() currentView: 'limitExceeded' | 'activateForm' | 'confirm' = 'limitExceeded'; // Determines the current view
   @Input() titleText = 'Are you sure?';
   @Input() messageText = '';
   @Input() confirmText = 'Yes';
   @Input() cancelText = 'No';
+  @Input() stayText = 'Stay';
+  @Input() showStay = false;
   @Output() dialogOpen = new EventEmitter();
   @Output() confirmed = new EventEmitter<boolean>();
+  @Output() stayed = new EventEmitter<void>();
   
   isDialogVisible: boolean = true;
   showActivateForm: boolean = false;
@@ -36,6 +39,10 @@ export class NotesLimitDialogComponent {
     this.closeDialog();
   }
 
+  stayHere() {
+    this.stayed.emit();
+  }
+
   redirectToBuy() {
     window.open('https://your-site.com/upgrade', '_blank');
   }
@@ -46,10 +53,8 @@ export class NotesLimitDialogComponent {
 
   validateKey() {
     (window as any).license.activateKey(this.activationCode).then((activationResponse: ActivationResponse) => {
-      console.log(activationResponse)
       if (activationResponse.success) {
-        this.closeDialog()
-        console.log('License is valid!');
+        this.closeDialog();
       } else {
         alert('Error validating key:'+activationResponse.message);
       }

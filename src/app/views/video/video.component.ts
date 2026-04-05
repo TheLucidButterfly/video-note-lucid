@@ -7,7 +7,6 @@ import { interval, of, switchMap, takeWhile } from 'rxjs';
 import { LoadingNotificationService } from 'src/app/services/loading-notification/loading-notification.service';
 import { CentralService } from 'src/app/services/central.service';
 import { environment, uploadModes } from '../../../environments/environment';
-import { jsPDF } from 'jspdf';
 
 
 @Component({
@@ -44,12 +43,13 @@ export class VideoComponent implements OnInit {
   showDialog = false;
   premiumAccount = false;
   showExportDialog = false;
+  dirtyNoteKeys: Set<string> = new Set();
 
   constructor(
     private route: ActivatedRoute,
     private storageService: StorageService,
     private loader: LoadingNotificationService,
-    private centralService: CentralService,
+    public centralService: CentralService,
     private renderer: Renderer2) { }
 
   // All subscriptions: this.api.getDefaultMedia() 
@@ -59,7 +59,10 @@ export class VideoComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.setVideoSrc()
+    this.setVideoSrc();
+    this.centralService.saveRequest$
+      .pipe(takeWhile(() => this.alive))
+      .subscribe(() => this.saveAllNotes());
   }
 
   // Dragging logic
@@ -93,10 +96,11 @@ export class VideoComponent implements OnInit {
     const newPlayerWidth = mouseX - containerRect.left;
     const resizerWidth = resizer?.getBoundingClientRect().width ?? 0;
     const newTextAreaWidth = containerRect.width - newPlayerWidth - resizerWidth;
-    const minimumPaneWidth = 220;
+    const minimumPlayerPaneWidth = 220;
+    const minimumNotesPaneWidth = 300;
 
     // Set new widths
-    if (newPlayerWidth > minimumPaneWidth && newTextAreaWidth > minimumPaneWidth) {
+    if (newPlayerWidth > minimumPlayerPaneWidth && newTextAreaWidth > minimumNotesPaneWidth) {
       this.renderer.setStyle(player, 'width', `${newPlayerWidth}px`);
       this.renderer.setStyle(textAreaContainer, 'width', `${newTextAreaWidth}px`);
     }
@@ -142,8 +146,10 @@ export class VideoComponent implements OnInit {
   }
 
   async deleteNoteHelper() {
-    this.loader.show()
-    let timeSignatureNumberToRemove = this.selectedSignatureObject.timeSignature;
+    this.loader.show();
+    const timeSignatureNumberToRemove = this.selectedSignatureObject.timeSignature;
+    this.dirtyNoteKeys.delete(timeSignatureNumberToRemove);
+    this.centralService.hasUnsavedChanges = true;
     if (this.notesArray.length > 0) {
       // If more object, pick the one next to it (behind)
       this.selectedSignatureObject = this.notesArray[Number(this.selectedSignatureObject.timeSignature) - 1]
@@ -217,13 +223,9 @@ export class VideoComponent implements OnInit {
     }
   }
 
-  printSignature() {
-    console.log(this.selectedSignatureObject)
-  }
+  printSignature() { }
 
-  printAllNotes() {
-    console.log(this.notesArray)
-  }
+  printAllNotes() { }
 
   formatSignature(signature: any) {
     return String(this.normalizeToSeconds(signature))
@@ -285,6 +287,7 @@ export class VideoComponent implements OnInit {
       } as TimeSignatureObject;
       this.notesArray.push(this.selectedSignatureObject);
       this.notesArray = this.sortNotesObject(this.notesArray);
+      this.markNoteDirty(currentTime);
     } else {
       this.selectedSignatureObject = foundSignatureObject;
     }
@@ -352,9 +355,16 @@ export class VideoComponent implements OnInit {
   //   this.storageService.saveNotesToVideoObject(this.savedVideoIndex, this.notesArray);
   // }
 
+  markNoteDirty(key: string) {
+    this.centralService.hasUnsavedChanges = true;
+    this.dirtyNoteKeys.add(key);
+  }
+
   saveAllNotes() {
     this.api.pause();
     this.storageService.saveNotesToVideoObject(this.savedVideoUrlIndex, this.notesArray);
+    this.centralService.hasUnsavedChanges = false;
+    this.dirtyNoteKeys.clear();
   }
 
   //TODO: Fill in the below functions
@@ -404,8 +414,8 @@ export class VideoComponent implements OnInit {
   }
 
   handleExportFormat(format: 'txt' | 'md' | 'csv' | 'pdf') {
-    void this.exportNotes(format);
     this.closeExportDialog();
+    void this.exportNotes(format);
   }
 
   private buildExportFileBaseName(): string {
@@ -501,6 +511,7 @@ export class VideoComponent implements OnInit {
   }
 
   private async downloadPdfFile(fileName: string, notes: TimeSignatureObject[]): Promise<void> {
+    const { jsPDF } = await import('jspdf');
     const document = new jsPDF({ unit: 'pt', format: 'a4' });
     const pageWidth = document.internal.pageSize.getWidth();
     const pageHeight = document.internal.pageSize.getHeight();

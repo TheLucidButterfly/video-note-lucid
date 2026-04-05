@@ -98,13 +98,11 @@ const axios = require('axios'); // For API requests
 const premiumFilePath = path.join(app.getPath('userData'), 'premium.json');
 function loadPremiumStatus() {
   if (!fs.existsSync(premiumFilePath)) {
-    console.log('Premium status not found. Defaulting to non-premium.');
     return false; // Default to non-premium
   }
 
   try {
     const data = JSON.parse(fs.readFileSync(premiumFilePath, 'utf8'));
-    console.log('Loaded premium status:', data);
     return data.premium === true; // Return true if premium
   } catch (error) {
     console.error('Error loading premium status:', error);
@@ -120,10 +118,8 @@ function activateKey(key) {
     
     const premiumData = { premium: true, activatedAt: new Date().toISOString() };
     fs.writeFileSync(premiumFilePath, JSON.stringify(premiumData, null, 2));
-    console.log('Premium status updated:', premiumData);
     return { success: true, message: 'Activation successful!' };
   } else {
-    console.error('Invalid activation key:', key);
     return { success: false, message: 'Invalid activation key.' };
   }
 }

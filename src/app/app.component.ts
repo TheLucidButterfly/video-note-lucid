@@ -13,6 +13,7 @@ import { switchMap } from 'rxjs';
 })
 export class AppComponent {
   isHomePage = false;
+  showUnsavedDialog = false;
   private readonly displayedPathLength = 50;
 
   constructor(
@@ -38,8 +39,25 @@ export class AppComponent {
   }
 
   navigateHome() {
+    if (this.centralService.hasUnsavedChanges) {
+      this.showUnsavedDialog = true;
+      return;
+    }
+    this.doNavigateHome();
+  }
+
+  onUnsavedDialogConfirmed(save: boolean) {
+    this.showUnsavedDialog = false;
+    if (save) {
+      this.centralService.requestSave();
+    }
+    this.centralService.hasUnsavedChanges = false;
+    this.doNavigateHome();
+  }
+
+  private doNavigateHome() {
     this.router.navigate(['/home']);
-    this.centralService.setTitle('')
+    this.centralService.setTitle('');
   }
 
   formatDisplayPath(path: string | null | undefined): string {
