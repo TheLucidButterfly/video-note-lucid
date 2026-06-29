@@ -40,7 +40,10 @@ let debugging = false;
       mainWindow.loadURL('data:text/html;charset=utf-8,<h2>Build missing</h2><p>Run: npm run build:prod</p>');
     }
   }
-  mainWindow.webContents.openDevTools()
+  const openDevTools = process.env.OPEN_DEVTOOLS === 'true';
+  if (!app.isPackaged && openDevTools) {
+    mainWindow.webContents.openDevTools()
+  }
 }
 
 // Define IPC handlers in the main process

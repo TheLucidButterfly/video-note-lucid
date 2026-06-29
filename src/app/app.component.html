@@ -10,6 +10,9 @@
         <span class="title-hint">Hover for full path</span>
       </div>
    </div>
+    <div *ngIf="environment.trialMode" class="trial-badge">
+      Trial Mode
+    </div>
   </div>
   <router-outlet></router-outlet>
   <app-spinner *ngIf="LoadingService.loading$ | async" id='loadingIndicator' class="app-spinner"></app-spinner>

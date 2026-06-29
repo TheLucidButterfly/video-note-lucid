@@ -14,6 +14,64 @@ Run `ng generate component component-name` to generate a new component. You can 
 
 Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
 
+### Trial Build Flag
+
+Trial mode is now a dedicated Angular build configuration: `trial`.
+
+- Build trial web assets:
+
+```bash
+npm run build:trial
+```
+
+- Build trial macOS DMG (Apple Silicon, unsigned):
+
+```bash
+npm run make:mac:m-series:trial
+```
+
+- Build trial macOS DMG (Apple Silicon, signed):
+
+```bash
+npm run make:mac:m-series:trial:signed
+```
+
+Trial settings are centralized in `src/environments/environment.trial.ts`.
+
+Recommended trial limits:
+
+- `maxVideos: 2`
+- `maxNotesPerVideo: 5`
+
+These limits are enforced in app logic:
+
+- Upload flow caps total saved videos.
+- Annotation flow caps notes per video.
+
+### Available Flags
+
+| Flag | What it does | Default |
+| --- | --- | --- |
+| `signed` | Enables signing/notarization for release scripts ending in `:signed`. | `false` (unsigned) |
+| `trial` | Uses `environment.trial.ts` and applies trial restrictions. | `false` (full mode) |
+| `prod` (production) | Uses `environment.prod.ts`, enables production mode, and keeps developer tools hidden by default. | `false` in dev runs |
+
+### Static False Flags
+
+These UI feature toggles are currently hard-coded to `false`:
+
+- `homeDevButtonsDeveloped` in `src/app/views/home-view/home-view.component.ts`:
+  hides `Delete All` and `View Saved Data` on Home.
+- `extendedMetricsDeveloped` in `src/app/views/info/info.component.ts`:
+  hides `Uploads Tracked` and `Storage Used (bytes)` on Info.
+
+## TODO
+
+- Pagination for videos on Home page.
+- Settings page.
+- More video details on the Info page.
+- Mass delete selection option.
+
 ## Build and Run Electron packaging
 
 $npm run deploy

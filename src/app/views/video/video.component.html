@@ -26,11 +26,10 @@
 </div>
 <div class="button-bar">
     <span (click)="playOrPause()" class="play-pause-button button"
-        [ngClass]="{'paused': this.api?.state === 'playing' }">{{(this.api?.state === 'playing') ? 'Pause' :
-        'Play'}}</span>
+        [ngClass]="{'paused': api && api.state === 'playing'}">{{ api && api.state === 'playing' ? 'Pause' : 'Play' }}</span>
     <span (click)="annotate()" class="annotate-button button"
         [ngClass]="{'disabledButton': onKnownSignature === true }">{{(onKnownSignature) ? 'Editing' : 'Create note at '+
-        formatSignatureDisplay(api?.time?.current)}} </span>
+        formatSignatureDisplay(api ? api.time?.current : 0)}} </span>
     <div class="storage-buttons">
         <span (click)="saveAllNotes()" class="save-button button">Save</span>
         <span (click)="deleteButton()" class="delete-button button"

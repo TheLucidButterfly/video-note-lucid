@@ -8,6 +8,7 @@ import { TimeSignatureObject } from 'src/app/interfaces/time-signature-object.in
 })
 export class TextAreaComponent {
   private readonly notePreviewMaxLength = 72;
+  readonly notesPerPage = 3;
 
   @Input('selectedSignatureObject') selectedSignatureObject: any;
   @Input('notesArray') notesArray: TimeSignatureObject[] = [];
@@ -21,7 +22,7 @@ export class TextAreaComponent {
 
   timeSignatureArray: TimeSignatureObject[] = [];
 
-  page = 0;
+  page = 1;
 
   ngOnInit(): void { }
 
@@ -29,11 +30,6 @@ export class TextAreaComponent {
     if (changes && !changes['selectedSignatureObject']) {
       // Handle ticks
       this.updateCurrentTimeEmit.emit(this.currentTime | 0);
-      this.updateCurrentText.emit(
-        typeof this.selectedSignatureObject?.notes === 'string'
-          ? this.selectedSignatureObject.notes
-          : ''
-      );
     }
   }
 

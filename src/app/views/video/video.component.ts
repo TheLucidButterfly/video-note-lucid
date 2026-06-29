@@ -240,34 +240,7 @@ export class VideoComponent implements OnInit {
     return Math.max(0, Math.floor(numericSignature / 1000));
   }
 
-  setDomElement() {
-    //   const viewContainerRef = this.vcRef;
-    //   const component = viewContainerRef.createComponent(TimeSignatureComponent);
-    //   component.instance.videoComponentRef = this;
-    //   component.instance.assignedId = locationMetadata.currentSecond;
-    //   component.instance.locationMetadata = locationMetadata;
-  }
-
-
-
-  /* 
-    getScrubBar() {
-      // Get dimensions
-      let barWidth = this.scrubBar.elem.clientWidth;
-      console.log('barWidth', barWidth)
-      let duration = this.api.duration;
-      console.log('duration:', duration)
-      let pixelsPerSecond = barWidth / duration;
-      console.log('pixelsPerSecond:', pixelsPerSecond)
-  
-      let slider = this.api.videogularElement.getElementsByClassName("slider")[0]
-      let sliderLocation = slider.getBoundingClientRect();
-  
-      // Set to html
-      return sliderLocation
-    }
-  */
-
+  setDomElement() { }
 
   annotate() {
     this.api.pause();
@@ -275,12 +248,12 @@ export class VideoComponent implements OnInit {
     let foundSignatureObject: TimeSignatureObject;
     foundSignatureObject = this.setCurrentTimeSignature(currentTime)
 
-    // Premium check
-    if(this.notesArray.length > 2 && !this.centralService.isPremiumUser()){ 
-      this.showDialog = true; 
-      return;
-    }
     if (!foundSignatureObject) {
+      if (environment.trialMode && this.notesArray.length >= environment.trialLimits.maxNotesPerVideo) {
+        alert(`Trial limit reached: up to ${environment.trialLimits.maxNotesPerVideo} notes per video.`);
+        return;
+      }
+
       this.selectedSignatureObject = {
         timeSignature: currentTime,
         notes: this.textArea
@@ -296,46 +269,24 @@ export class VideoComponent implements OnInit {
 
   // *legacy
   // annotate() {
-  //   this.api.pause();
-  //   let currentTime = this.formatSignature(this.api?.time?.current | 0);
-  //   let foundSignatureObject: TimeSignatureObject;
-  //   foundSignatureObject = this.setCurrentTimeSignature(currentTime)
-  //   if (!foundSignatureObject) {
-  //     this.selectedSignatureObject = {
-  //       timeSignature: currentTime,
-  //       notes: this.textArea
-  //     } as TimeSignatureObject;
-  //     this.notesArray.push(this.selectedSignatureObject);
-  //     this.notesArray = this.sortNotesObject(this.notesArray);
-  //   } else {
-  //     this.selectedSignatureObject = foundSignatureObject;
-  //   }
-  //   this.onKnownSignature = true;
-  // }
-
-  // TODO: Can we put this in annotate and condense it?
-  foundTimeSignature(currentTime: any) {
-    let foundSignatureObject: TimeSignatureObject;
-    foundSignatureObject = this.setCurrentTimeSignature(currentTime)
-    if (!foundSignatureObject) {
-      return false;
-    } else {
-      return true;
-    }
-  }
   // TODO: Improve this function 
   handleUpdatedCurrentTime(time?: any) {
-    let currentTime = this.formatSignature(this.api?.time?.current | 0);
-    let foundSignatureObject = this.setCurrentTimeSignature(currentTime)
+    const currentTime = typeof time !== 'undefined'
+      ? String(time)
+      : this.formatSignature(this.api?.time?.current | 0);
+    const foundSignatureObject = this.setCurrentTimeSignature(currentTime)
+
     if (foundSignatureObject) {
       this.onKnownSignature = true;
       this.selectedSignatureObject = foundSignatureObject;
+      this.textArea = foundSignatureObject.notes || '';
     } else {
       this.onKnownSignature = false;
       this.selectedSignatureObject = {
-        timeSignature: this.formatSignature(this.api.time.current),
+        timeSignature: currentTime,
         notes: ''
       };
+      this.textArea = '';
     }
   }
 

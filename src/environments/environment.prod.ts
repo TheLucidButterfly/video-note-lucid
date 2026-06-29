@@ -1,11 +1,11 @@
 export enum uploadModes {
     pathed = 'pathed',
     saved = 'saved'
-}  
+}
 
 export const environment = {
-    production: false,
-    appTitle: 'My Angular App (Development)',
+    production: true,
+    appTitle: 'Vide-note',
     uploadMode: uploadModes.pathed,
     trialMode: false,
     trialLimits: {

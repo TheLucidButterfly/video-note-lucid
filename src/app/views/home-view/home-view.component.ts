@@ -5,6 +5,7 @@ import { LoadingNotificationService } from 'src/app/services/loading-notificatio
 import { Observable } from 'rxjs';
 import { CentralService } from 'src/app/services/central.service';
 import { VideoUploadService } from 'src/app/services/video-upload.service';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-home-view',
@@ -13,6 +14,8 @@ import { VideoUploadService } from 'src/app/services/video-upload.service';
 })
 export class HomeViewComponent {
 
+  readonly environment = environment;
+  readonly homeDevButtonsDeveloped = false;
   locationRef = location;
   title = 'video-notes';
 
@@ -40,9 +43,16 @@ export class HomeViewComponent {
   }
 
   private loadStoredPaths() {
-    this.refreshVideoPathList().subscribe((storedPaths) => {
-      this.storedPaths = storedPaths ?? [];
-      this.isLoading(false);
+    this.refreshVideoPathList().subscribe({
+      next: (storedPaths) => {
+        this.storedPaths = storedPaths ?? [];
+        this.isLoading(false);
+      },
+      error: (error) => {
+        console.error('test1: Failed to load stored paths', error);
+        this.storedPaths = [];
+        this.isLoading(false);
+      }
     })
   }
 
@@ -85,8 +95,17 @@ export class HomeViewComponent {
     this.router.navigate(['developer-tools']);
   }
 
-  openUploader() {
-    this.videoUploadService.selectVideoAndNavigate();
+  navigateToInfoPage() {
+    this.router.navigate(['info']);
+  }
+
+  async openUploader() {
+    const uploadResult = await this.videoUploadService.selectVideoAndPersist();
+    if (!uploadResult) {
+      return;
+    }
+
+    this.loadStoredPaths();
   }
 
   isLoading(loading: boolean) {

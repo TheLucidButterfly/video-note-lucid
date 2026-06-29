@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { StorageService } from './storage-service.service';
+import { environment } from 'src/environments/environment';
 
 interface VideoUploadResult {
   selectedFileNames: string[];
@@ -14,8 +14,7 @@ interface VideoUploadResult {
 export class VideoUploadService {
 
   constructor(
-    private storageService: StorageService,
-    private router: Router
+    private storageService: StorageService
   ) { }
 
   /**
@@ -23,37 +22,80 @@ export class VideoUploadService {
    * about the newly uploaded files. Returns null when user cancels.
    */
   async selectVideoAndPersist(): Promise<VideoUploadResult | null> {
-    const electronApi = (window as any)?.electron;
-    if (!electronApi?.ipcRenderer?.invoke) {
-      console.warn('Electron IPC is not available in browser mode.');
+    try {
+      const electronApi = (window as any)?.electron;
+      if (!electronApi?.ipcRenderer?.invoke) {
+        alert('Uploader is unavailable: Electron IPC bridge not found.');
+        return null;
+      }
+
+      const remainingVideoSlots = await this.getRemainingVideoSlots();
+      if (remainingVideoSlots === 0) {
+        const currentCount = await this.getSavedVideoCount();
+        alert(
+          `Trial limit reached (${currentCount}/${environment.trialLimits.maxVideos} videos). ` +
+          'Delete a video from Home to add another, or run non-trial mode.'
+        );
+        return null;
+      }
+
+      const filePaths: string[] = await electronApi.ipcRenderer.invoke('openDialog');
+      if (!filePaths?.length) {
+        return null;
+      }
+
+      const acceptedFilePaths =
+        remainingVideoSlots === null ? filePaths : filePaths.slice(0, remainingVideoSlots);
+
+      if (!acceptedFilePaths.length) {
+        return null;
+      }
+
+      if (remainingVideoSlots !== null && filePaths.length > acceptedFilePaths.length) {
+        alert(
+          `Trial mode only saved ${acceptedFilePaths.length} video(s). ` +
+          `Limit is ${environment.trialLimits.maxVideos} total videos.`
+        );
+      }
+
+      const newUploadCount = acceptedFilePaths.length;
+      const savedPaths = await firstValueFrom(
+        this.storageService.saveExtractedVideoPaths(this.createPathObject(acceptedFilePaths) as any)
+      );
+
+      const firstNewPathIndex = Math.max(0, (savedPaths?.length || 0) - newUploadCount);
+
+      return {
+        selectedFileNames: this.getUploadedFileNamesList(acceptedFilePaths),
+        firstNewPathIndex,
+      };
+    } catch (error: any) {
+      console.error('selectVideoAndPersist failed:', error);
+      alert(`Upload failed: ${error?.message || 'unknown error'}`);
       return null;
     }
-
-    const filePaths: string[] = await electronApi.ipcRenderer.invoke('openDialog');
-    if (!filePaths?.length) {
-      return null;
-    }
-
-    const newUploadCount = filePaths.length;
-    const savedPaths = await firstValueFrom(
-      this.storageService.saveExtractedVideoPaths(this.createPathObject(filePaths) as any)
-    );
-
-    const firstNewPathIndex = Math.max(0, (savedPaths?.length || 0) - newUploadCount);
-
-    return {
-      selectedFileNames: this.getUploadedFileNamesList(filePaths),
-      firstNewPathIndex,
-    };
   }
 
-  async selectVideoAndNavigate(): Promise<void> {
-    const result = await this.selectVideoAndPersist();
-    if (!result) {
-      return;
+  private async getRemainingVideoSlots(): Promise<number | null> {
+    if (!environment.trialMode) {
+      return null;
     }
 
-    this.router.navigate(['video'], { queryParams: { index: result.firstNewPathIndex } });
+    const currentCount = await this.getSavedVideoCount();
+    return Math.max(0, environment.trialLimits.maxVideos - currentCount);
+  }
+
+  private async getSavedVideoCount(): Promise<number> {
+    try {
+      const savedPaths = await firstValueFrom(this.storageService.getSavedPaths());
+      if (!Array.isArray(savedPaths)) {
+        return 0;
+      }
+
+      return savedPaths.filter((entry: any) => typeof entry?.path === 'string' && entry.path.trim().length > 0).length;
+    } catch {
+      return 0;
+    }
   }
 
   private getUploadedFileNamesList(filePaths: string[]): string[] {

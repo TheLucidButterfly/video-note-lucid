@@ -22,6 +22,30 @@
   flex-wrap: wrap;
 }
 
+.home-actions {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 5;
+}
+
+.home-loading-hint {
+  color: rgba(255, 255, 255, 0.9);
+  text-align: center;
+  margin-top: 14px;
+  font-size: 14px;
+}
+
+.info-link-button {
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 18px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #113d54;
+  background: #d6eef8;
+}
+
 .gridTile {
   height: 150px;
   width: 150px;

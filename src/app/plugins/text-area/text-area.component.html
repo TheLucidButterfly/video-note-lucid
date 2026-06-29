@@ -1,7 +1,7 @@
 <div class="container-column">
     <div class="time-signature-list">
         <div class="time-signature-items">
-            <p *ngFor="let notesObject of notesArray | paginate: { itemsPerPage: 5, currentPage: page }"
+            <p *ngFor="let notesObject of notesArray | paginate: { itemsPerPage: notesPerPage, currentPage: page }"
                 class="noteBarSignatureItem clickable" (click)="selectTime(notesObject)" [ngClass]="{
                     'populated-signature': notesObject?.notes != '', 
                     'selected-signature': notesObject.timeSignature == selectedSignatureObject.timeSignature,

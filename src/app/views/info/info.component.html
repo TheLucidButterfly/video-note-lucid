@@ -9,14 +9,22 @@
       <span class="info-label">Saved Notes</span>
       <span class="info-value">{{ savedNoteCount }}</span>
     </div>
-    <div class="info-card">
-      <span class="info-label">Uploads Tracked</span>
-      <span class="info-value">{{ userData?.videoLengthUsed || 0 }}</span>
-    </div>
-    <div class="info-card">
-      <span class="info-label">Storage Used (bytes)</span>
-      <span class="info-value">{{ userData?.videoStorageUsed || 0 }}</span>
-    </div>
+    <ng-container *ngIf="extendedMetricsDeveloped">
+      <div class="info-card">
+        <span class="info-label">Uploads Tracked</span>
+        <span class="info-value">{{ userData?.videoLengthUsed || 0 }}</span>
+      </div>
+      <div class="info-card">
+        <span class="info-label">Storage Used (bytes)</span>
+        <span class="info-value">{{ userData?.videoStorageUsed || 0 }}</span>
+      </div>
+    </ng-container>
+  </div>
+
+  <div class="support-card">
+    <h3>Support</h3>
+    <p>Issues or questions? Send an email to <a href="mailto:LucidButterflyManifestation@gmail.com">LucidButterflyManifestation@gmail.com</a>.</p>
+    <p class="company-name">Lucid Butterfly LLC</p>
   </div>
 </div>
 

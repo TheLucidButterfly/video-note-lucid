@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { CentralService } from './services/central.service';
 import { StorageService } from './services/storage-service.service';
 import { LoadingNotificationService } from './services/loading-notification/loading-notification.service';
-import { switchMap } from 'rxjs';
+import { environment } from 'src/environments/environment';
 
 
 @Component({
@@ -12,6 +12,7 @@ import { switchMap } from 'rxjs';
   styleUrls: ['./app.component.css']
 })
 export class AppComponent {
+  readonly environment = environment;
   isHomePage = false;
   showUnsavedDialog = false;
   private readonly displayedPathLength = 50;
@@ -25,14 +26,20 @@ export class AppComponent {
 
   ngOnInit(): void { 
     this.LoadingService.show();
-    this.storageService.loadPremiumStatus()
-    .pipe(
-      switchMap((isPremiumStatus: boolean) => {
+    this.storageService.loadPremiumStatus().subscribe({
+      next: (isPremiumStatus: boolean) => {
         this.centralService.isPremium = isPremiumStatus;
-        return this.router.events;
-      })
-    )
-    .subscribe(() => {
+      },
+      error: (error) => {
+        console.error('test1: loadPremiumStatus failed', error);
+      },
+      complete: () => {
+        this.LoadingService.hide();
+      }
+    });
+
+    this.isHomePage = this.router.url === '/home';
+    this.router.events.subscribe(() => {
       this.LoadingService.hide();
       this.isHomePage = this.router.url === '/home'; // Check if URL is '/'
     });

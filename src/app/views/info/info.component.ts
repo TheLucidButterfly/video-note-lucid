@@ -16,9 +16,10 @@ import { VideoUploadService } from 'src/app/services/video-upload.service';
 })
 
 export class InfoComponent {
+  readonly extendedMetricsDeveloped = false;
 
   droppedVideoList: NgxFileDropEntry[] = [];
-  userData!: UserData;
+  userData?: UserData;
   loading = false;
   roomForVideos = true;
 
@@ -63,7 +64,7 @@ export class InfoComponent {
     }
 
     this.uploadedFileNames = uploadResult.selectedFileNames;
-    this.router.navigate(['video'], { queryParams: { index: uploadResult.firstNewPathIndex } });
+    this.loadInfoPageData();
   }
 
   /*

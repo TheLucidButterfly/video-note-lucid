@@ -63,7 +63,7 @@ export class UploaderComponent {
     }
 
     this.uploadedFileNames = uploadResult.selectedFileNames;
-    this.router.navigate(['video'], { queryParams: { index: uploadResult.firstNewPathIndex } });
+    this.loadInfoPageData();
   }
 
   private setUserData() {
