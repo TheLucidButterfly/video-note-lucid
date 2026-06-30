@@ -7,11 +7,15 @@
   "author": "Anthony Joseph Calderaio Jr.",
   "license": "MIT",
   "build": {
+    "asarUnpack": [
+      "local-binaries/**/*"
+    ],
     "files": [
       "dist/**/*",
       "app.js",
       "preload.js",
-      "electron-api/**/*"
+      "electron-api/**/*",
+      "local-binaries/**/*"
     ],
     "appId": "com.vide-note.app",
     "directories": {
@@ -66,6 +70,7 @@
     "test:ci": "ng test --watch=false --browsers=ChromeHeadless",
     "package": "electron-forge package",
     "preflight:mac:signed": "node scripts/preflight-mac-signing.js",
+    "check:local-binaries": "node scripts/check-local-binaries.js",
     "remove-builds": "rm -rf dist && rm -rf out",
     "make:mac:m-series": "npm run remove-builds && ng build --configuration=production && env -u APPLE_ID -u APPLE_APP_SPECIFIC_PASSWORD -u APPLE_TEAM_ID CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac dmg --arm64",
     "make:mac:m-series:signed": "npm run preflight:mac:signed && npm run test:ci && npm run remove-builds && ng build --configuration=production && CSC_IDENTITY_AUTO_DISCOVERY=true electron-builder --mac dmg --arm64",
@@ -91,7 +96,6 @@
     "@angular/platform-browser-dynamic": "^16.2.0",
     "@angular/router": "^16.2.0",
     "@videogular/ngx-videogular": "^8.0.0",
-    "axios": "^1.7.9",
     "idb-keyval": "^6.2.1",
     "jspdf": "^4.2.0",
     "ngx-file-drop": "^16.0.0",

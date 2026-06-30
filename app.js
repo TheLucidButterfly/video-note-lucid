@@ -3,6 +3,7 @@ const { app, BrowserWindow, dialog } = require('electron');
 
 const path = require("path");
 const fs = require('fs');
+const { spawn } = require('child_process');
 
 let mainWindow
 
@@ -40,8 +41,7 @@ let debugging = false;
       mainWindow.loadURL('data:text/html;charset=utf-8,<h2>Build missing</h2><p>Run: npm run build:prod</p>');
     }
   }
-  const openDevTools = process.env.OPEN_DEVTOOLS === 'true';
-  if (!app.isPackaged && openDevTools) {
+  if (!app.isPackaged) {
     mainWindow.webContents.openDevTools()
   }
 }
@@ -93,52 +93,6 @@ ipcMain.handle('write-file', async (event, payload) => {
   }
 });
 
-// Payments
-const axios = require('axios'); // For API requests
-
-function extractYouTubeVideoId(rawUrl) {
-  try {
-    const parsed = new URL(rawUrl);
-    const host = parsed.hostname.toLowerCase();
-
-    if (host.includes('youtu.be')) {
-      return parsed.pathname.replace(/^\//, '').trim();
-    }
-
-    if (host.includes('youtube.com')) {
-      return parsed.searchParams.get('v') || '';
-    }
-
-    return '';
-  } catch {
-    return '';
-  }
-}
-
-function parseTrackAttributes(attributeText) {
-  const attributes = {};
-  const attrRegex = /(\w+)="([^"]*)"/g;
-  let match;
-
-  while ((match = attrRegex.exec(attributeText)) !== null) {
-    attributes[match[1]] = match[2];
-  }
-
-  return attributes;
-}
-
-function parseTrackListXml(xmlText) {
-  const tracks = [];
-  const trackRegex = /<track\b([^>]*)\/>/g;
-  let match;
-
-  while ((match = trackRegex.exec(xmlText)) !== null) {
-    tracks.push(parseTrackAttributes(match[1]));
-  }
-
-  return tracks;
-}
-
 function sanitizeCaptionText(text) {
   return (text || '')
     .replace(/\n+/g, ' ')
@@ -146,73 +100,442 @@ function sanitizeCaptionText(text) {
     .trim();
 }
 
-function parseJson3Events(jsonPayload) {
-  const events = Array.isArray(jsonPayload?.events) ? jsonPayload.events : [];
+function runCommand(command, args, options = {}) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      shell: false,
+      stdio: ['ignore', 'pipe', 'pipe'],
+      ...options
+    });
 
-  return events
-    .map((event) => {
-      const startMs = Number(event?.tStartMs || 0);
-      const durationMs = Number(event?.dDurationMs || 0);
-      const segs = Array.isArray(event?.segs) ? event.segs : [];
-      const text = sanitizeCaptionText(segs.map((segment) => segment?.utf8 || '').join(''));
+    let stdout = '';
+    let stderr = '';
 
+    child.stdout.on('data', (chunk) => {
+      stdout += String(chunk || '');
+    });
+
+    child.stderr.on('data', (chunk) => {
+      stderr += String(chunk || '');
+    });
+
+    child.on('error', (error) => {
+      reject(error);
+    });
+
+    child.on('close', (code) => {
+      if (code === 0) {
+        resolve({ stdout, stderr });
+        return;
+      }
+
+      const commandError = new Error(`${command} failed with code ${code}`);
+      commandError.stdout = stdout;
+      commandError.stderr = stderr;
+      commandError.exitCode = code;
+      reject(commandError);
+    });
+  });
+}
+
+function getPlatformArchFolder() {
+  return `${process.platform}-${process.arch}`;
+}
+
+function getBundledToolsRootCandidates() {
+  const platformArch = getPlatformArchFolder();
+
+  // In development, binaries live in the repository under local-binaries.
+  // In packaged app, binaries are copied into app resources.
+  return [
+    path.join(__dirname, 'local-binaries', platformArch),
+    path.join(__dirname, 'app.asar.unpacked', 'local-binaries', platformArch),
+    path.join(process.resourcesPath || '', 'local-binaries', platformArch),
+    path.join(process.resourcesPath || '', 'app', 'local-binaries', platformArch),
+    path.join(process.resourcesPath || '', 'app.asar.unpacked', 'local-binaries', platformArch)
+  ];
+}
+
+function resolveBundledCommand(commandNames) {
+  const roots = getBundledToolsRootCandidates();
+
+  for (const rootDir of roots) {
+    for (const commandName of commandNames) {
+      const candidatePath = path.join(rootDir, commandName);
+      if (fs.existsSync(candidatePath)) {
+        return candidatePath;
+      }
+    }
+  }
+
+  return null;
+}
+
+function getBundledCommandLookupCandidates(commandNames) {
+  const roots = getBundledToolsRootCandidates();
+  const candidates = [];
+
+  for (const rootDir of roots) {
+    for (const commandName of commandNames) {
+      candidates.push(path.join(rootDir, commandName));
+    }
+  }
+
+  return candidates;
+}
+
+function resolveBundledModel(modelNames) {
+  const roots = getBundledToolsRootCandidates();
+
+  for (const rootDir of roots) {
+    for (const modelName of modelNames) {
+      const directPath = path.join(rootDir, modelName);
+      if (fs.existsSync(directPath)) {
+        return directPath;
+      }
+
+      const nestedPath = path.join(rootDir, 'models', modelName);
+      if (fs.existsSync(nestedPath)) {
+        return nestedPath;
+      }
+    }
+  }
+
+  return null;
+}
+
+function getBundledLibDirectory() {
+  const roots = getBundledToolsRootCandidates();
+  for (const rootDir of roots) {
+    const libDir = path.join(rootDir, 'lib');
+    if (fs.existsSync(libDir)) {
+      return libDir;
+    }
+  }
+
+  return null;
+}
+
+function getLocalTranscribeReadiness() {
+  const platformArch = getPlatformArchFolder();
+  const roots = getBundledToolsRootCandidates();
+  const whisperCandidates = ['whisper-cli', 'main', 'whisper'];
+  const modelCandidates = ['ggml-base.en.bin', 'ggml-base.bin', 'ggml-tiny.en.bin', 'ggml-tiny.bin'];
+
+  const ytDlpPath = resolveBundledCommand(['yt-dlp']);
+  const ffmpegPath = resolveBundledCommand(['ffmpeg']);
+  const whisperPath = resolveBundledCommand(whisperCandidates);
+  const modelPath = resolveBundledModel(modelCandidates);
+  const libDir = getBundledLibDirectory();
+
+  const missing = [];
+
+  if (!ytDlpPath) {
+    missing.push('yt-dlp binary');
+  }
+
+  if (!ffmpegPath) {
+    missing.push('ffmpeg binary');
+  }
+
+  if (!whisperPath) {
+    missing.push('whisper binary');
+  }
+
+  if (!modelPath) {
+    missing.push(`whisper model (${modelCandidates.join(', ')})`);
+  }
+
+  if (process.platform === 'darwin') {
+    const requiredLibs = ['libwhisper.1.dylib', 'libggml.0.dylib', 'libggml-base.0.dylib'];
+    for (const libName of requiredLibs) {
+      const libFound = roots.some((rootDir) => fs.existsSync(path.join(rootDir, 'lib', libName)));
+      if (!libFound) {
+        missing.push(`macOS whisper library ${libName}`);
+      }
+    }
+  }
+
+  const siblingArchs = ['arm64', 'x64'].filter((arch) => arch !== process.arch);
+  const siblingHints = [];
+  if (!whisperPath) {
+    for (const siblingArch of siblingArchs) {
+      const siblingRoot = path.join(__dirname, 'local-binaries', `${process.platform}-${siblingArch}`);
+      const siblingWhisper = whisperCandidates
+        .map((name) => path.join(siblingRoot, name))
+        .find((candidatePath) => fs.existsSync(candidatePath));
+      if (siblingWhisper) {
+        siblingHints.push(`Found ${siblingWhisper}, but runtime expects ${platformArch}`);
+      }
+    }
+  }
+
+  return {
+    ready: missing.length === 0,
+    platform: process.platform,
+    arch: process.arch,
+    platformArch,
+    isPackaged: app.isPackaged,
+    roots,
+    resolved: {
+      ytDlpPath,
+      ffmpegPath,
+      whisperPath,
+      modelPath,
+      libDir
+    },
+    missing,
+    siblingHints
+  };
+}
+
+function ensureDirectory(dirPath) {
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+  }
+}
+
+function parseWhisperJsonSegments(jsonText) {
+  let parsed;
+  try {
+    parsed = JSON.parse(jsonText);
+  } catch {
+    return [];
+  }
+
+  const pythonSegments = Array.isArray(parsed?.segments) ? parsed.segments : [];
+  if (pythonSegments.length) {
+    return pythonSegments
+      .map((segment) => {
+        const text = sanitizeCaptionText(segment?.text || '');
+        if (!text) {
+          return null;
+        }
+
+        return {
+          startSec: Math.max(0, Math.floor(Number(segment?.start || 0))),
+          endSec: Math.max(0, Math.floor(Number(segment?.end || 0))),
+          text
+        };
+      })
+      .filter(Boolean);
+  }
+
+  // whisper.cpp JSON format
+  const cppSegments = Array.isArray(parsed?.transcription) ? parsed.transcription : [];
+  return cppSegments
+    .map((segment) => {
+      const text = sanitizeCaptionText(segment?.text || '');
       if (!text) {
         return null;
       }
 
+      const fromMs = Number(segment?.offsets?.from ?? 0);
+      const toMs = Number(segment?.offsets?.to ?? fromMs);
+
       return {
-        startSec: Math.max(0, Math.floor(startMs / 1000)),
-        endSec: Math.max(0, Math.floor((startMs + durationMs) / 1000)),
+        startSec: Math.max(0, Math.floor(fromMs / 1000)),
+        endSec: Math.max(0, Math.floor(toMs / 1000)),
         text
       };
     })
     .filter(Boolean);
 }
 
-async function fetchYouTubeTranscriptSegments(sourceUrl) {
-  const videoId = extractYouTubeVideoId(sourceUrl);
-  if (!videoId) {
-    return { success: false, error: 'Invalid YouTube URL.' };
+function getWhisperDetectedLanguage(jsonText) {
+  try {
+    const parsed = JSON.parse(jsonText);
+    const language = (parsed && parsed.result && parsed.result.language) ? String(parsed.result.language).trim() : '';
+    return language || 'unknown';
+  } catch {
+    return 'unknown';
   }
+}
 
-  const listUrl = `https://video.google.com/timedtext?type=list&v=${encodeURIComponent(videoId)}`;
-  const listResponse = await axios.get(listUrl);
-  const tracks = parseTrackListXml(listResponse?.data || '');
+async function fetchLocalTranscriptFromUrl(sourceUrl) {
+  const platformArch = getPlatformArchFolder();
+  const bundledRootCandidates = getBundledToolsRootCandidates();
 
-  if (!tracks.length) {
-    return { success: false, error: 'No caption tracks available for this video.' };
-  }
-
-  const englishTrack = tracks.find((track) => (track.lang_code || '').toLowerCase().startsWith('en'));
-  const selectedTrack = englishTrack || tracks[0];
-
-  const params = new URLSearchParams({
-    v: videoId,
-    lang: selectedTrack.lang_code || 'en',
-    fmt: 'json3'
+  console.info('[local-transcribe] Runtime:', {
+    platform: process.platform,
+    arch: process.arch,
+    isPackaged: app.isPackaged,
+    platformArch
   });
+  console.info('[local-transcribe] Bundled roots:', bundledRootCandidates);
 
-  if (selectedTrack.name) {
-    params.set('name', selectedTrack.name);
+  const tempRoot = path.join(app.getPath('temp'), 'video-notes-transcribe');
+  const jobId = `job-${Date.now()}`;
+  const jobDir = path.join(tempRoot, jobId);
+  ensureDirectory(jobDir);
+
+  const audioTemplate = path.join(jobDir, 'audio.%(ext)s');
+
+  const ytDlpCommand = resolveBundledCommand(['yt-dlp']);
+  const ffmpegCommand = resolveBundledCommand(['ffmpeg']);
+
+  if (!ytDlpCommand) {
+    throw new Error('Missing bundled yt-dlp binary. Add it to local-binaries/<platform>-<arch>/yt-dlp before running transcription.');
   }
 
-  const transcriptUrl = `https://www.youtube.com/api/timedtext?${params.toString()}`;
-  const transcriptResponse = await axios.get(transcriptUrl);
-  const segments = parseJson3Events(transcriptResponse?.data || {});
+  if (!ffmpegCommand) {
+    throw new Error('Missing bundled ffmpeg binary. Add it to local-binaries/<platform>-<arch>/ffmpeg before running transcription.');
+  }
+
+  try {
+    const ytdlpArgs = [
+      '--no-playlist',
+      '--extract-audio',
+      '--audio-format',
+      'wav',
+      '--ffmpeg-location',
+      path.dirname(ffmpegCommand),
+      '--output',
+      audioTemplate,
+      sourceUrl
+    ];
+
+    await runCommand(ytDlpCommand, ytdlpArgs);
+  } catch (error) {
+    const stderr = (error && error.stderr) ? ` ${error.stderr}` : '';
+    throw new Error(`Could not download audio locally using bundled yt-dlp.${stderr}`.trim());
+  }
+
+  const downloadedAudio = fs
+    .readdirSync(jobDir)
+    .find((fileName) => fileName.startsWith('audio.') && !fileName.endsWith('.json'));
+
+  if (!downloadedAudio) {
+    throw new Error('Audio download succeeded but no local audio file was found.');
+  }
+
+  const audioPath = path.join(jobDir, downloadedAudio);
+
+  const whisperCommand = resolveBundledCommand(['whisper-cli', 'main', 'whisper']);
+  if (!whisperCommand) {
+    const lookupPaths = getBundledCommandLookupCandidates(['whisper-cli', 'main', 'whisper']);
+    const lookupSummary = lookupPaths.map((candidatePath) => `${candidatePath}${fs.existsSync(candidatePath) ? ' (exists)' : ' (missing)'}`);
+    const siblingArchs = ['arm64', 'x64'].filter((arch) => arch !== process.arch);
+    const siblingHints = [];
+
+    for (const siblingArch of siblingArchs) {
+      const siblingRoot = path.join(__dirname, 'local-binaries', `${process.platform}-${siblingArch}`);
+      const siblingWhisperCandidates = ['whisper-cli', 'whisper', 'main'].map((name) => path.join(siblingRoot, name));
+      const foundSibling = siblingWhisperCandidates.find((candidatePath) => fs.existsSync(candidatePath));
+
+      if (foundSibling) {
+        siblingHints.push(`found ${foundSibling} but runtime expects ${platformArch}`);
+      }
+    }
+
+    console.error('[local-transcribe] Missing whisper binary for runtime', {
+      platform: process.platform,
+      arch: process.arch,
+      platformArch,
+      lookupSummary,
+      siblingHints
+    });
+
+    const siblingHintText = siblingHints.length
+      ? ` Hint: ${siblingHints.join('; ')}.`
+      : '';
+    throw new Error(`Missing bundled whisper binary for runtime ${platformArch}. Checked: ${lookupSummary.join(', ')}. Add whisper-cli (or whisper/main) to local-binaries/<platform>-<arch>/.${siblingHintText}`);
+  }
+
+  const whisperModelPath = resolveBundledModel([
+    'ggml-base.en.bin',
+    'ggml-base.bin',
+    'ggml-tiny.en.bin',
+    'ggml-tiny.bin'
+  ]);
+  if (!whisperModelPath) {
+    throw new Error('Missing bundled whisper model file. Add one of: ggml-base.en.bin, ggml-base.bin, ggml-tiny.en.bin, or ggml-tiny.bin under local-binaries/<platform>-<arch>/models/.');
+  }
+
+  const whisperOutputBase = path.join(jobDir, 'whisper-output');
+  const bundledLibDir = getBundledLibDirectory();
+
+  const whisperEnv = {
+    ...process.env,
+    DYLD_LIBRARY_PATH: bundledLibDir
+      ? [bundledLibDir, process.env.DYLD_LIBRARY_PATH || ''].filter(Boolean).join(':')
+      : process.env.DYLD_LIBRARY_PATH
+  };
+
+  try {
+    const whisperArgs = [
+      '-f',
+      audioPath,
+      '-m',
+      whisperModelPath,
+      '-oj',
+      '-of',
+      whisperOutputBase,
+      '-l',
+      'auto'
+    ];
+
+    await runCommand(whisperCommand, whisperArgs, { env: whisperEnv });
+  } catch (error) {
+    const stderr = (error && error.stderr) ? ` ${error.stderr}` : '';
+    throw new Error(`Could not run local speech-to-text using bundled whisper binary.${stderr}`.trim());
+  }
+
+  const whisperOutputPath = `${whisperOutputBase}.json`;
+  if (!fs.existsSync(whisperOutputPath)) {
+    throw new Error('Local transcription completed but no JSON output file was produced.');
+  }
+
+  const jsonContent = fs.readFileSync(whisperOutputPath, 'utf8');
+  let segments = parseWhisperJsonSegments(jsonContent);
+  let detectedLanguage = getWhisperDetectedLanguage(jsonContent);
+
+  // whisper auto language detection can occasionally yield zero segments.
+  // Retry once with explicit English and relaxed no-speech threshold.
+  if (!segments.length) {
+    const fallbackOutputBase = path.join(jobDir, 'whisper-output-en-fallback');
+    const fallbackOutputPath = `${fallbackOutputBase}.json`;
+
+    try {
+      const fallbackArgs = [
+        '-f',
+        audioPath,
+        '-m',
+        whisperModelPath,
+        '-oj',
+        '-of',
+        fallbackOutputBase,
+        '-l',
+        'en',
+        '-nth',
+        '1.0'
+      ];
+
+      await runCommand(whisperCommand, fallbackArgs, { env: whisperEnv });
+
+      if (fs.existsSync(fallbackOutputPath)) {
+        const fallbackJson = fs.readFileSync(fallbackOutputPath, 'utf8');
+        const fallbackSegments = parseWhisperJsonSegments(fallbackJson);
+        if (fallbackSegments.length) {
+          segments = fallbackSegments;
+          detectedLanguage = getWhisperDetectedLanguage(fallbackJson);
+        }
+      }
+    } catch {
+      // Keep original behavior and error below if fallback fails.
+    }
+  }
 
   if (!segments.length) {
-    return { success: false, error: 'Transcript was fetched but contained no readable text.' };
+    throw new Error(`Local transcription completed but produced no readable segments (detected language: ${detectedLanguage}). Try a clip with clearer speech.`);
   }
 
   return {
     success: true,
-    source: 'caption',
-    videoId,
-    language: selectedTrack.lang_code || 'unknown',
+    source: 'asr',
     segments
   };
 }
-
 
 // Load Premium Status function
 const premiumFilePath = path.join(app.getPath('userData'), 'premium.json');
@@ -249,14 +572,26 @@ ipcMain.handle('activate-key', (event, key) => {
   return activateKey(key);
 });
 
-ipcMain.handle('fetch-youtube-transcript', async (_event, sourceUrl) => {
+ipcMain.handle('fetch-local-url-transcript', async (_event, sourceUrl) => {
   try {
-    return await fetchYouTubeTranscriptSegments(sourceUrl);
+    return await fetchLocalTranscriptFromUrl(sourceUrl);
   } catch (error) {
-    console.error('fetch-youtube-transcript failed:', error);
+    console.error('fetch-local-url-transcript failed:', error);
     return {
       success: false,
-      error: error?.message || 'Unknown transcript fetch error.'
+      error: error?.message || 'Unknown local transcript error.'
+    };
+  }
+});
+
+ipcMain.handle('check-local-transcribe-readiness', async () => {
+  try {
+    return getLocalTranscribeReadiness();
+  } catch (error) {
+    console.error('check-local-transcribe-readiness failed:', error);
+    return {
+      ready: false,
+      error: error?.message || 'Unknown readiness check error.'
     };
   }
 });

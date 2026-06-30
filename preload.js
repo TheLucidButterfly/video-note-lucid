@@ -50,7 +50,10 @@ contextBridge.exposeInMainWorld('fileAPI', {
 });
 
 contextBridge.exposeInMainWorld('transcriptAPI', {
-  fetchYouTubeTranscript: async (url) => {
-    return ipcRenderer.invoke('fetch-youtube-transcript', url);
+  fetchLocalUrlTranscript: async (url) => {
+    return ipcRenderer.invoke('fetch-local-url-transcript', url);
+  },
+  checkLocalTranscribeReadiness: async () => {
+    return ipcRenderer.invoke('check-local-transcribe-readiness');
   }
 });

@@ -41,7 +41,8 @@ export class VideoTextViewComponent {
       this.parsedResult = await this.videoTextParserService.parseUrlToReadableTranscript(this.sourceUrl);
     } catch (error) {
       console.error('video-text parse failed', error);
-      this.parseError = (error as any)?.message || 'Failed to parse transcript from this URL.';
+      const rawMessage = (error as any)?.message || 'Failed to parse transcript from this URL.';
+      this.parseError = rawMessage;
       this.parsedResult = null;
     } finally {
       this.isProcessing = false;

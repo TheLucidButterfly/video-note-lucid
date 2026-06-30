@@ -32,43 +32,42 @@ export class VideoTextParserService {
 
   async parseUrlToReadableTranscript(sourceUrl: string): Promise<ParsedTranscriptResult> {
     const sourceType = this.detectSourceType(sourceUrl);
+    const transcriptApi = (window as any)?.transcriptAPI;
 
-    if (sourceType === 'youtube') {
-      const transcriptApi = (window as any)?.transcriptAPI;
-      if (!transcriptApi?.fetchYouTubeTranscript) {
-        throw new Error('Transcript API is not available in this runtime.');
-      }
-
-      const response = await transcriptApi.fetchYouTubeTranscript(sourceUrl);
-      if (!response?.success) {
-        throw new Error(response?.error || 'Failed to fetch YouTube transcript.');
-      }
-
-      const mergedSegments = this.mergeCaptionSegments(response.segments || []);
-      const fullTranscript = mergedSegments.map(segment => segment.text).join(' ');
-      const smartNotes = this.buildSmartNotes(mergedSegments);
-
-      return {
-        sourceUrl,
-        sourceType,
-        source: 'caption',
-        fullTranscript,
-        segments: mergedSegments,
-        smartNotes
-      };
+    if (!transcriptApi?.fetchLocalUrlTranscript) {
+      throw new Error('Local transcript API is not available in this runtime.');
     }
 
-    const fullTranscript = this.buildPrototypeTranscript(sourceUrl, sourceType);
-    const words = this.tokenizeTranscript(fullTranscript);
-    const segments = this.chunkWords(words);
-    const smartNotes = this.buildSmartNotes(segments);
+    if (transcriptApi?.checkLocalTranscribeReadiness) {
+      const readiness = await transcriptApi.checkLocalTranscribeReadiness();
+      if (!readiness?.ready) {
+        const runtimeLabel = readiness?.platformArch || `${readiness?.platform || 'unknown'}-${readiness?.arch || 'unknown'}`;
+        const missingText = Array.isArray(readiness?.missing) && readiness.missing.length
+          ? readiness.missing.join(', ')
+          : 'unknown dependencies';
+        const hintText = Array.isArray(readiness?.siblingHints) && readiness.siblingHints.length
+          ? ` Hint: ${readiness.siblingHints.join(' | ')}`
+          : '';
+        throw new Error(`Local transcription is not ready for ${runtimeLabel}. Missing: ${missingText}.${hintText}`);
+      }
+    }
+
+    const localResponse = await transcriptApi.fetchLocalUrlTranscript(sourceUrl);
+    if (!localResponse?.success) {
+      throw new Error(localResponse?.error || 'Failed to create local transcript.');
+    }
+
+    const localSource: 'caption' | 'asr' = localResponse?.source === 'caption' ? 'caption' : 'asr';
+    const mergedSegments = this.mergeCaptionSegments(localResponse.segments || [], localSource);
+    const fullTranscript = mergedSegments.map(segment => segment.text).join(' ');
+    const smartNotes = this.buildSmartNotes(mergedSegments);
 
     return {
       sourceUrl,
       sourceType,
-      source: 'asr',
+      source: localSource,
       fullTranscript,
-      segments,
+      segments: mergedSegments,
       smartNotes
     };
   }
@@ -83,61 +82,9 @@ export class VideoTextParserService {
     return 'direct-link';
   }
 
-  private buildPrototypeTranscript(url: string, sourceType: string): string {
-    return [
-      `Prototype transcript for ${sourceType} source: ${url}.`,
-      'This mode is intentionally chunked for readability so notes do not explode into one timestamp per word.',
-      'Transcript chunks are grouped by phrase and sentence boundaries and can later be replaced with a provider-backed caption or ASR pipeline.',
-      'Smart notes summarize groups of transcript segments and remain low-density compared to raw transcript output.',
-      'As provider integrations are added, this same chunking and summarization model should remain consistent with the video-to-text parsing rules.'
-    ].join(' ');
-  }
-
-  private tokenizeTranscript(transcript: string): string[] {
-    return transcript
-      .replace(/\s+/g, ' ')
-      .trim()
-      .split(' ')
-      .filter(Boolean);
-  }
-
-  private chunkWords(words: string[]): ParsedTranscriptSegment[] {
-    const segments: ParsedTranscriptSegment[] = [];
-    let cursor = 0;
-    let startSec = 0;
-
-    while (cursor < words.length) {
-      const maxCursor = Math.min(cursor + this.maxWordsPerChunk, words.length);
-      let endCursor = maxCursor;
-
-      if (maxCursor < words.length) {
-        for (let i = maxCursor - 1; i >= cursor + this.minWordsPerChunk; i--) {
-          if (/[.!?]$/.test(words[i])) {
-            endCursor = i + 1;
-            break;
-          }
-        }
-      }
-
-      const chunkWords = words.slice(cursor, endCursor);
-      const duration = Math.min(this.maxChunkDurationSec, Math.max(8, Math.ceil(chunkWords.length / 2.5)));
-
-      segments.push({
-        startSec,
-        endSec: startSec + duration,
-        text: chunkWords.join(' '),
-        source: 'asr'
-      });
-
-      startSec += duration;
-      cursor = endCursor;
-    }
-
-    return segments;
-  }
-
   private mergeCaptionSegments(
-    segments: Array<{ startSec: number; endSec: number; text: string }>
+    segments: Array<{ startSec: number; endSec: number; text: string }>,
+    source: 'caption' | 'asr'
   ): ParsedTranscriptSegment[] {
     const merged: ParsedTranscriptSegment[] = [];
 
@@ -154,7 +101,7 @@ export class VideoTextParserService {
         startSec: currentStart,
         endSec: currentEnd,
         text: currentWords.join(' ').trim(),
-        source: 'caption'
+        source
       });
 
       currentWords = [];
