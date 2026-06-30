@@ -21,6 +21,7 @@ import { NgxPaginationModule } from 'ngx-pagination';
 import { DeveloperToolsComponent } from './views/developer-tools/developer-tools.component';
 import { FileNameFromPathPipe } from './pipes/file-name-from-path.pipe';
 import { DialogComponent } from './plugins/dialog/dialog.component'; // <-- import the module
+import { VideoTextViewComponent } from './views/video-text-view/video-text-view.component';
 
 
 @NgModule({
@@ -35,7 +36,8 @@ import { DialogComponent } from './plugins/dialog/dialog.component'; // <-- impo
     MinutesFormatPipe,
     DeveloperToolsComponent,
     FileNameFromPathPipe,
-    DialogComponent
+    DialogComponent,
+    VideoTextViewComponent
   ],
   imports: [
     BrowserModule,

@@ -28,6 +28,10 @@ export class HomeViewComponent {
   devMode = true;
   showDialog = false;
   showDeleteDialog = false;
+  showAddModeDialog = false;
+  showUrlImportDialog = false;
+  importUrlInput = '';
+  importUrlError = '';
   pendingDeleteIndex: number | null = null;
   pendingDeleteTitle = '';
 
@@ -106,6 +110,58 @@ export class HomeViewComponent {
     }
 
     this.loadStoredPaths();
+  }
+
+  openAddModeDialog() {
+    this.showAddModeDialog = true;
+  }
+
+  closeAddModeDialog() {
+    this.showAddModeDialog = false;
+  }
+
+  async chooseImportVideoMode() {
+    this.closeAddModeDialog();
+    await this.openUploader();
+  }
+
+  chooseUrlImportMode() {
+    this.closeAddModeDialog();
+    this.importUrlInput = '';
+    this.importUrlError = '';
+    this.showUrlImportDialog = true;
+  }
+
+  closeUrlImportDialog() {
+    this.showUrlImportDialog = false;
+    this.importUrlError = '';
+  }
+
+  submitUrlImport() {
+    const normalized = (this.importUrlInput || '').trim();
+
+    if (!normalized) {
+      this.importUrlError = 'Please enter a URL.';
+      return;
+    }
+
+    if (!this.isLikelyWebUrl(normalized)) {
+      this.importUrlError = 'Please enter a valid http(s) URL.';
+      return;
+    }
+
+    this.showUrlImportDialog = false;
+    this.importUrlError = '';
+    this.router.navigate(['video-text'], { queryParams: { url: normalized } });
+  }
+
+  private isLikelyWebUrl(value: string): boolean {
+    try {
+      const parsed = new URL(value);
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    } catch {
+      return false;
+    }
   }
 
   isLoading(loading: boolean) {

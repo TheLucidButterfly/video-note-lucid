@@ -65,6 +65,62 @@ These UI feature toggles are currently hard-coded to `false`:
 - `extendedMetricsDeveloped` in `src/app/views/info/info.component.ts`:
   hides `Uploads Tracked` and `Storage Used (bytes)` on Info.
 
+## Video-to-Text Parsing Functionality Rules
+
+These rules define how transcript import/parsing should behave so output stays readable and useful.
+
+### Core Principle
+
+- Never create one note per word/time tick. Word-level entries are too noisy.
+- Parse into readable chunks (sentence/phrase/topic), then optionally generate concise notes from those chunks.
+
+### Input + Source Priority
+
+- Accept link input (for example YouTube or direct media links).
+- Prefer existing captions/subtitles first when available.
+- Fall back to speech-to-text only when captions are unavailable.
+
+### Parsing + Chunking Rules
+
+- Normalize whitespace and punctuation before chunking.
+- Create chunks based on pause and sentence boundaries, not single words.
+- Recommended defaults:
+  - `maxChunkDurationSec`: `20`
+  - `minWordsPerChunk`: `6`
+  - `maxWordsPerChunk`: `40`
+  - `pauseBoundaryMs`: `700`
+- Merge very short fragments forward so each chunk is readable.
+
+### Transcript vs Notes
+
+- Store transcript segments separately from manual notes.
+- Transcript segment model should include:
+  - `startSec`
+  - `endSec`
+  - `text`
+  - `confidence` (if available)
+  - `source` (`caption` | `asr`)
+- Smart notes (optional) should reference chunked transcript and remain low-density.
+
+### Readability + Density Guardrails
+
+- Do not render every timestamp as a visible note item.
+- Render transcript in blocks with click-to-seek behavior.
+- If auto-generating notes, target summary-level cadence (topic/idea), not per sentence unless explicitly requested.
+
+### UX Rules
+
+- Provide separate modes:
+  - `Manual Notes`
+  - `Transcript`
+  - `Smart Notes`
+- Keep transcript and notes independently toggleable to avoid clutter.
+
+### Compliance + Safety
+
+- Respect source/platform terms for link-based ingestion.
+- Prefer legal caption retrieval paths over raw media extraction when possible.
+
 ## TODO
 
 - Pagination for videos on Home page.

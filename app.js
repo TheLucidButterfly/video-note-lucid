@@ -96,6 +96,123 @@ ipcMain.handle('write-file', async (event, payload) => {
 // Payments
 const axios = require('axios'); // For API requests
 
+function extractYouTubeVideoId(rawUrl) {
+  try {
+    const parsed = new URL(rawUrl);
+    const host = parsed.hostname.toLowerCase();
+
+    if (host.includes('youtu.be')) {
+      return parsed.pathname.replace(/^\//, '').trim();
+    }
+
+    if (host.includes('youtube.com')) {
+      return parsed.searchParams.get('v') || '';
+    }
+
+    return '';
+  } catch {
+    return '';
+  }
+}
+
+function parseTrackAttributes(attributeText) {
+  const attributes = {};
+  const attrRegex = /(\w+)="([^"]*)"/g;
+  let match;
+
+  while ((match = attrRegex.exec(attributeText)) !== null) {
+    attributes[match[1]] = match[2];
+  }
+
+  return attributes;
+}
+
+function parseTrackListXml(xmlText) {
+  const tracks = [];
+  const trackRegex = /<track\b([^>]*)\/>/g;
+  let match;
+
+  while ((match = trackRegex.exec(xmlText)) !== null) {
+    tracks.push(parseTrackAttributes(match[1]));
+  }
+
+  return tracks;
+}
+
+function sanitizeCaptionText(text) {
+  return (text || '')
+    .replace(/\n+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function parseJson3Events(jsonPayload) {
+  const events = Array.isArray(jsonPayload?.events) ? jsonPayload.events : [];
+
+  return events
+    .map((event) => {
+      const startMs = Number(event?.tStartMs || 0);
+      const durationMs = Number(event?.dDurationMs || 0);
+      const segs = Array.isArray(event?.segs) ? event.segs : [];
+      const text = sanitizeCaptionText(segs.map((segment) => segment?.utf8 || '').join(''));
+
+      if (!text) {
+        return null;
+      }
+
+      return {
+        startSec: Math.max(0, Math.floor(startMs / 1000)),
+        endSec: Math.max(0, Math.floor((startMs + durationMs) / 1000)),
+        text
+      };
+    })
+    .filter(Boolean);
+}
+
+async function fetchYouTubeTranscriptSegments(sourceUrl) {
+  const videoId = extractYouTubeVideoId(sourceUrl);
+  if (!videoId) {
+    return { success: false, error: 'Invalid YouTube URL.' };
+  }
+
+  const listUrl = `https://video.google.com/timedtext?type=list&v=${encodeURIComponent(videoId)}`;
+  const listResponse = await axios.get(listUrl);
+  const tracks = parseTrackListXml(listResponse?.data || '');
+
+  if (!tracks.length) {
+    return { success: false, error: 'No caption tracks available for this video.' };
+  }
+
+  const englishTrack = tracks.find((track) => (track.lang_code || '').toLowerCase().startsWith('en'));
+  const selectedTrack = englishTrack || tracks[0];
+
+  const params = new URLSearchParams({
+    v: videoId,
+    lang: selectedTrack.lang_code || 'en',
+    fmt: 'json3'
+  });
+
+  if (selectedTrack.name) {
+    params.set('name', selectedTrack.name);
+  }
+
+  const transcriptUrl = `https://www.youtube.com/api/timedtext?${params.toString()}`;
+  const transcriptResponse = await axios.get(transcriptUrl);
+  const segments = parseJson3Events(transcriptResponse?.data || {});
+
+  if (!segments.length) {
+    return { success: false, error: 'Transcript was fetched but contained no readable text.' };
+  }
+
+  return {
+    success: true,
+    source: 'caption',
+    videoId,
+    language: selectedTrack.lang_code || 'unknown',
+    segments
+  };
+}
+
 
 // Load Premium Status function
 const premiumFilePath = path.join(app.getPath('userData'), 'premium.json');
@@ -130,6 +247,18 @@ function activateKey(key) {
 // IPC handler for activating the key
 ipcMain.handle('activate-key', (event, key) => {
   return activateKey(key);
+});
+
+ipcMain.handle('fetch-youtube-transcript', async (_event, sourceUrl) => {
+  try {
+    return await fetchYouTubeTranscriptSegments(sourceUrl);
+  } catch (error) {
+    console.error('fetch-youtube-transcript failed:', error);
+    return {
+      success: false,
+      error: error?.message || 'Unknown transcript fetch error.'
+    };
+  }
 });
 
 

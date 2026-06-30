@@ -4,10 +4,12 @@ import { InfoComponent } from './views/info/info.component';
 import { HomeViewComponent } from './views/home-view/home-view.component';
 import { VideoComponent } from './views/video/video.component';
 import { DeveloperToolsComponent } from './views/developer-tools/developer-tools.component';
+import { VideoTextViewComponent } from './views/video-text-view/video-text-view.component';
 
 const routes: Routes = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },
   { path: 'video', component: VideoComponent },
+  { path: 'video-text', component: VideoTextViewComponent },
   { path: 'info', component: InfoComponent },
   { path: 'uploader', redirectTo: '/info', pathMatch: 'full' },
   { path: 'home', component: HomeViewComponent },

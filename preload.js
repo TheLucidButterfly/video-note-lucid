@@ -48,3 +48,9 @@ contextBridge.exposeInMainWorld('fileAPI', {
     return ipcRenderer.invoke('write-file', payload);
   },
 });
+
+contextBridge.exposeInMainWorld('transcriptAPI', {
+  fetchYouTubeTranscript: async (url) => {
+    return ipcRenderer.invoke('fetch-youtube-transcript', url);
+  }
+});

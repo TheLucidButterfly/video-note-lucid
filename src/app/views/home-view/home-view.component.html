@@ -25,6 +25,36 @@
   (confirmed)="handleDeleteConfirmation($event)">
 </app-dialog>
 
+<div *ngIf="showAddModeDialog" class="mode-dialog-overlay" (click)="closeAddModeDialog()">
+  <div class="mode-dialog" (click)="$event.stopPropagation()">
+    <h3>Add Content</h3>
+    <p>Choose how you want to add a new item.</p>
+    <div class="mode-dialog-actions">
+      <button class="mode-btn" (click)="chooseImportVideoMode()">Import Video File</button>
+      <button class="mode-btn" (click)="chooseUrlImportMode()">Input URL (Video-to-Text)</button>
+      <button class="mode-btn ghost" (click)="closeAddModeDialog()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="showUrlImportDialog" class="mode-dialog-overlay" (click)="closeUrlImportDialog()">
+  <div class="mode-dialog" (click)="$event.stopPropagation()">
+    <h3>Video Link Input</h3>
+    <p>Paste a YouTube or direct video URL. Transcript parsing opens in a dedicated view.</p>
+    <input
+      class="url-input"
+      type="text"
+      placeholder="https://..."
+      [(ngModel)]="importUrlInput"
+      (keyup.enter)="submitUrlImport()" />
+    <div *ngIf="importUrlError" class="url-error">{{ importUrlError }}</div>
+    <div class="mode-dialog-actions">
+      <button class="mode-btn" (click)="submitUrlImport()">Continue</button>
+      <button class="mode-btn ghost" (click)="closeUrlImportDialog()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <div class="appContainer">
   <div *ngIf="homeDevButtonsDeveloped || !centralService.isPremiumUser()" class="devToolContainer">
     <ng-container *ngIf="homeDevButtonsDeveloped">
@@ -41,7 +71,7 @@
   <div *ngIf="loading" class="home-loading-hint">Loading video references...</div>
   <div *ngIf="!loading && (!storedPaths || storedPaths.length === 0)" class="home-loading-hint">No saved videos yet. Click + to add one.</div>
   <div class="gridContainer">
-    <div (click)="openUploader()" class="gridTile clickable">+</div>
+    <div (click)="openAddModeDialog()" class="gridTile clickable">+</div>
     <div *ngFor="let path of storedPaths; let i = index"  class="gridTile">
       <span class="delete-button clickable" (click)="requestDeleteVideoPath(i, path.path)">X</span>
       <span class="tileSpan clickable" (click)="nagivateToUrlScreen(i)">{{path.path | fileNameFromPath}}</span>
