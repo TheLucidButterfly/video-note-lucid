@@ -31,13 +31,15 @@
     <p>Choose how you want to add a new item.</p>
     <div class="mode-dialog-actions">
       <button class="mode-btn" (click)="chooseImportVideoMode()">Import Video File</button>
-      <button class="mode-btn" (click)="chooseUrlImportMode()">Input URL (Video-to-Text)</button>
+      <!-- URL import intentionally disabled for legal/compliance reasons. -->
+      <!-- <button *ngIf="allowUrlInput" class="mode-btn" (click)="chooseUrlImportMode()">Input URL (Video-to-Text)</button> -->
       <button class="mode-btn ghost" (click)="closeAddModeDialog()">Cancel</button>
     </div>
   </div>
 </div>
 
-<div *ngIf="showUrlImportDialog" class="mode-dialog-overlay" (click)="closeUrlImportDialog()">
+<!-- URL import modal intentionally disabled for legal/compliance reasons. -->
+<!-- <div *ngIf="showUrlImportDialog" class="mode-dialog-overlay" (click)="closeUrlImportDialog()">
   <div class="mode-dialog" (click)="$event.stopPropagation()">
     <h3>Video Link Input</h3>
     <p>Paste a YouTube or direct video URL. Transcript parsing opens in a dedicated view.</p>
@@ -53,7 +55,7 @@
       <button class="mode-btn ghost" (click)="closeUrlImportDialog()">Cancel</button>
     </div>
   </div>
-</div>
+</div> -->
 
 <div class="appContainer">
   <div *ngIf="homeDevButtonsDeveloped || !centralService.isPremiumUser()" class="devToolContainer">
@@ -72,9 +74,19 @@
   <div *ngIf="!loading && (!storedPaths || storedPaths.length === 0)" class="home-loading-hint">No saved videos yet. Click + to add one.</div>
   <div class="gridContainer">
     <div (click)="openAddModeDialog()" class="gridTile clickable">+</div>
-    <div *ngFor="let path of storedPaths; let i = index"  class="gridTile">
-      <span class="delete-button clickable" (click)="requestDeleteVideoPath(i, path.path)">X</span>
-      <span class="tileSpan clickable" (click)="nagivateToUrlScreen(i)">{{path.path | fileNameFromPath}}</span>
+    <div *ngFor="let path of storedPaths; let i = index" class="gridTile videoTile clickable" (click)="nagivateToUrlScreen(i)">
+      <video
+        class="tileVideo"
+        [src]="buildVideoFileUrl(path.path)"
+        preload="metadata"
+        muted
+        playsinline
+        (loadedmetadata)="seekTilePreviewFrame($event)">
+      </video>
+      <div class="tileTitleWrap">
+        <span class="tileTitle">{{path.path | fileNameFromPath}}</span>
+      </div>
+      <span class="delete-button clickable" (click)="$event.stopPropagation(); requestDeleteVideoPath(i, path.path)">X</span>
     </div>
   </div>
 </div>

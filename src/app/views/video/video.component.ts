@@ -7,6 +7,8 @@ import { interval, of, switchMap, takeWhile } from 'rxjs';
 import { LoadingNotificationService } from 'src/app/services/loading-notification/loading-notification.service';
 import { CentralService } from 'src/app/services/central.service';
 import { environment, uploadModes } from '../../../environments/environment';
+import { TextAreaComponent } from 'src/app/plugins/text-area/text-area.component';
+import { prepareLoadedNotes } from './note-transform';
 
 
 @Component({
@@ -15,8 +17,10 @@ import { environment, uploadModes } from '../../../environments/environment';
   styleUrls: ['./video.component.css']
 })
 export class VideoComponent implements OnInit {
+  private readonly keyboardSeekStepSeconds = 5;
   @ViewChild('scrubBar') scrubBar: any;
   @ViewChild('noteBar', { read: ViewContainerRef }) vcRef!: ViewContainerRef;
+  @ViewChild(TextAreaComponent) textAreaComponent?: TextAreaComponent;
 
   viewRef!: ViewContainerRef;
 
@@ -43,6 +47,8 @@ export class VideoComponent implements OnInit {
   showDialog = false;
   premiumAccount = false;
   showExportDialog = false;
+  showShortcutsDialog = false;
+  showSavedToast = false;
   dirtyNoteKeys: Set<string> = new Set();
 
   constructor(
@@ -106,6 +112,54 @@ export class VideoComponent implements OnInit {
     }
   }
 
+  @HostListener('document:keydown', ['$event'])
+  onGlobalKeyDown(event: KeyboardEvent) {
+    if (!this.api) {
+      return;
+    }
+
+    const key = (event.key || '').toLowerCase();
+
+    if ((event.metaKey || event.ctrlKey) && key === 's') {
+      event.preventDefault();
+      this.saveAllNotes(true, false);
+      return;
+    }
+
+    if (key === '?') {
+      event.preventDefault();
+      this.toggleShortcutsDialog();
+      return;
+    }
+
+    if (this.isTypingTarget(event.target)) {
+      return;
+    }
+
+    if (key === ' ') {
+      event.preventDefault();
+      this.playOrPause();
+      return;
+    }
+
+    if (key === 'arrowright') {
+      event.preventDefault();
+      this.seekBySeconds(this.keyboardSeekStepSeconds);
+      return;
+    }
+
+    if (key === 'arrowleft') {
+      event.preventDefault();
+      this.seekBySeconds(-this.keyboardSeekStepSeconds);
+      return;
+    }
+
+    if (key === 'n') {
+      event.preventDefault();
+      this.annotate(true);
+    }
+  }
+
   setVideoSrc() {
     if (environment.uploadMode == uploadModes.pathed) {
       this.populateSrcFromLocalPath();
@@ -127,6 +181,17 @@ export class VideoComponent implements OnInit {
             this.centralService.setTitle(storedPaths[queryParams['index']]?.path);
             if (storedPaths[this.savedVideoUrlIndex]?.notes) {
               this.notesArray = storedPaths[this.savedVideoUrlIndex].notes;
+            }
+
+            // This call targets different implementations by build target:
+            // - development: src/app/views/video/note-transform.ts (real mock-note injector)
+            // - production/trial: src/app/views/video/note-transform.stub.ts (no-op passthrough)
+            // The swap is configured in angular.json fileReplacements.
+            if (environment.devFlagNoteInjectorStressTest.enabled) {
+              this.notesArray = prepareLoadedNotes(
+                this.notesArray,
+                environment.devFlagNoteInjectorStressTest.mockNotesTargetCount
+              );
             }
             return of()
           })
@@ -242,7 +307,7 @@ export class VideoComponent implements OnInit {
 
   setDomElement() { }
 
-  annotate() {
+  annotate(focusEditorAfter = false) {
     this.api.pause();
     let currentTime = this.formatSignature(this.api?.time?.current | 0);
     let foundSignatureObject: TimeSignatureObject;
@@ -265,6 +330,10 @@ export class VideoComponent implements OnInit {
       this.selectedSignatureObject = foundSignatureObject;
     }
     this.onKnownSignature = true;
+
+    if (focusEditorAfter) {
+      this.focusNotesEditor();
+    }
   }
 
   // *legacy
@@ -311,11 +380,15 @@ export class VideoComponent implements OnInit {
     this.dirtyNoteKeys.add(key);
   }
 
-  saveAllNotes() {
+  saveAllNotes(showSavedToast = false, showLoading = true) {
     this.api.pause();
-    this.storageService.saveNotesToVideoObject(this.savedVideoUrlIndex, this.notesArray);
+    this.storageService.saveNotesToVideoObject(this.savedVideoUrlIndex, this.notesArray, showLoading);
     this.centralService.hasUnsavedChanges = false;
     this.dirtyNoteKeys.clear();
+
+    if (showSavedToast) {
+      this.showSavedConfirmationToast();
+    }
   }
 
   //TODO: Fill in the below functions
@@ -335,6 +408,26 @@ export class VideoComponent implements OnInit {
       this.api.pause();
     }
 
+  }
+
+  private seekBySeconds(deltaSeconds: number) {
+    const currentSeconds = Number(this.formatSignature(this.api?.time?.current || 0));
+    const totalSeconds = Number(this.formatSignature(this.api?.time?.total || 0));
+    const boundedTarget = Number.isFinite(totalSeconds) && totalSeconds > 0
+      ? Math.max(0, Math.min(totalSeconds, currentSeconds + deltaSeconds))
+      : Math.max(0, currentSeconds + deltaSeconds);
+
+    this.seekTo(boundedTarget);
+    this.handleUpdatedCurrentTime(String(boundedTarget));
+  }
+
+  private isTypingTarget(target: EventTarget | null): boolean {
+    if (!(target instanceof HTMLElement)) {
+      return false;
+    }
+
+    const tagName = target.tagName.toLowerCase();
+    return target.isContentEditable || tagName === 'input' || tagName === 'textarea' || tagName === 'select';
   }
 
   async exportNotes(format: 'txt' | 'md' | 'csv' | 'pdf') {
@@ -367,6 +460,44 @@ export class VideoComponent implements OnInit {
   handleExportFormat(format: 'txt' | 'md' | 'csv' | 'pdf') {
     this.closeExportDialog();
     void this.exportNotes(format);
+  }
+
+  openShortcutsDialog() {
+    this.showShortcutsDialog = true;
+  }
+
+  closeShortcutsDialog() {
+    this.showShortcutsDialog = false;
+  }
+
+  toggleShortcutsDialog() {
+    this.showShortcutsDialog = !this.showShortcutsDialog;
+  }
+
+  hideSavedToast() {
+    this.showSavedToast = false;
+  }
+
+  private focusNotesEditor() {
+    setTimeout(() => {
+      this.textAreaComponent?.focusEditorField();
+
+      const textAreaElement = document.querySelector('.text-area-selector-container textarea.text-area') as HTMLTextAreaElement | null;
+      if (!textAreaElement) {
+        return;
+      }
+
+      textAreaElement.focus();
+      const cursorPosition = textAreaElement.value?.length || 0;
+      textAreaElement.setSelectionRange(cursorPosition, cursorPosition);
+    }, 24);
+  }
+
+  private showSavedConfirmationToast() {
+    this.showSavedToast = false;
+    setTimeout(() => {
+      this.showSavedToast = true;
+    }, 0);
   }
 
   private buildExportFileBaseName(): string {

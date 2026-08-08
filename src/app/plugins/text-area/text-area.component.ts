@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, SimpleChanges } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, Output, SimpleChanges, ViewChild } from '@angular/core';
 import { TimeSignatureObject } from 'src/app/interfaces/time-signature-object.interface';
 
 @Component({
@@ -8,7 +8,7 @@ import { TimeSignatureObject } from 'src/app/interfaces/time-signature-object.in
 })
 export class TextAreaComponent {
   private readonly notePreviewMaxLength = 72;
-  readonly notesPerPage = 3;
+  readonly notesPerPage = 10;
 
   @Input('selectedSignatureObject') selectedSignatureObject: any;
   @Input('notesArray') notesArray: TimeSignatureObject[] = [];
@@ -19,6 +19,7 @@ export class TextAreaComponent {
   @Input() dirtyKeys: Set<string> = new Set();
   @Input() currentTime?: any;
   @Input() api?: any;
+  @ViewChild('textArea') textAreaRef?: ElementRef<HTMLTextAreaElement>;
 
   timeSignatureArray: TimeSignatureObject[] = [];
 
@@ -50,6 +51,11 @@ export class TextAreaComponent {
     if (this.api.state === 'playing') {
       this.api.pause();
     }
+  }
+
+  focusEditorField() {
+    this.focusTextArea();
+    this.textAreaRef?.nativeElement?.focus();
   }
 
   getNotePreview(note: string | null | undefined): string {

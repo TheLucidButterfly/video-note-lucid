@@ -15,6 +15,8 @@ import { environment } from 'src/environments/environment';
 export class HomeViewComponent {
 
   readonly environment = environment;
+  // URL import intentionally disabled for legal/compliance reasons.
+  // readonly allowUrlInput = environment.allowUrlInput;
   readonly homeDevButtonsDeveloped = false;
   locationRef = location;
   title = 'video-notes';
@@ -29,9 +31,10 @@ export class HomeViewComponent {
   showDialog = false;
   showDeleteDialog = false;
   showAddModeDialog = false;
-  showUrlImportDialog = false;
-  importUrlInput = '';
-  importUrlError = '';
+  // URL import intentionally disabled for legal/compliance reasons.
+  // showUrlImportDialog = false;
+  // importUrlInput = '';
+  // importUrlError = '';
   pendingDeleteIndex: number | null = null;
   pendingDeleteTitle = '';
 
@@ -95,6 +98,29 @@ export class HomeViewComponent {
     this.router.navigate(['video'], { queryParams: index })
   }
 
+  buildVideoFileUrl(path: string): string {
+    if (!path) {
+      return '';
+    }
+    return `file://${encodeURI(path)}`;
+  }
+
+  seekTilePreviewFrame(event: Event) {
+    const video = event.target as HTMLVideoElement | null;
+    if (!video) {
+      return;
+    }
+
+    if (Number.isFinite(video.duration) && video.duration > 1) {
+      video.currentTime = 1;
+      return;
+    }
+
+    if (Number.isFinite(video.duration) && video.duration > 0.1) {
+      video.currentTime = 0.1;
+    }
+  }
+
   navigateToDevTools() {
     this.router.navigate(['developer-tools']);
   }
@@ -125,44 +151,49 @@ export class HomeViewComponent {
     await this.openUploader();
   }
 
-  chooseUrlImportMode() {
-    this.closeAddModeDialog();
-    this.importUrlInput = '';
-    this.importUrlError = '';
-    this.showUrlImportDialog = true;
-  }
-
-  closeUrlImportDialog() {
-    this.showUrlImportDialog = false;
-    this.importUrlError = '';
-  }
-
-  submitUrlImport() {
-    const normalized = (this.importUrlInput || '').trim();
-
-    if (!normalized) {
-      this.importUrlError = 'Please enter a URL.';
-      return;
-    }
-
-    if (!this.isLikelyWebUrl(normalized)) {
-      this.importUrlError = 'Please enter a valid http(s) URL.';
-      return;
-    }
-
-    this.showUrlImportDialog = false;
-    this.importUrlError = '';
-    this.router.navigate(['video-text'], { queryParams: { url: normalized } });
-  }
-
-  private isLikelyWebUrl(value: string): boolean {
-    try {
-      const parsed = new URL(value);
-      return parsed.protocol === 'http:' || parsed.protocol === 'https:';
-    } catch {
-      return false;
-    }
-  }
+  // URL import intentionally disabled for legal/compliance reasons.
+  // chooseUrlImportMode() {
+  //   if (!this.allowUrlInput) {
+  //     return;
+  //   }
+  //
+  //   this.closeAddModeDialog();
+  //   this.importUrlInput = '';
+  //   this.importUrlError = '';
+  //   this.showUrlImportDialog = true;
+  // }
+  //
+  // closeUrlImportDialog() {
+  //   this.showUrlImportDialog = false;
+  //   this.importUrlError = '';
+  // }
+  //
+  // submitUrlImport() {
+  //   const normalized = (this.importUrlInput || '').trim();
+  //
+  //   if (!normalized) {
+  //     this.importUrlError = 'Please enter a URL.';
+  //     return;
+  //   }
+  //
+  //   if (!this.isLikelyWebUrl(normalized)) {
+  //     this.importUrlError = 'Please enter a valid http(s) URL.';
+  //     return;
+  //   }
+  //
+  //   this.showUrlImportDialog = false;
+  //   this.importUrlError = '';
+  //   this.router.navigate(['video-text'], { queryParams: { url: normalized } });
+  // }
+  //
+  // private isLikelyWebUrl(value: string): boolean {
+  //   try {
+  //     const parsed = new URL(value);
+  //     return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  //   } catch {
+  //     return false;
+  //   }
+  // }
 
   isLoading(loading: boolean) {
     if (loading) {

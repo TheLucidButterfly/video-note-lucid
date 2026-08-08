@@ -32,9 +32,10 @@ export class VideoUploadService {
       const remainingVideoSlots = await this.getRemainingVideoSlots();
       if (remainingVideoSlots === 0) {
         const currentCount = await this.getSavedVideoCount();
+        const maxVideos = this.getConfiguredMaxVideos();
         alert(
-          `Trial limit reached (${currentCount}/${environment.trialLimits.maxVideos} videos). ` +
-          'Delete a video from Home to add another, or run non-trial mode.'
+          `Video limit reached (${currentCount}/${maxVideos} videos). ` +
+          'Delete a video from Home to add another.'
         );
         return null;
       }
@@ -52,9 +53,10 @@ export class VideoUploadService {
       }
 
       if (remainingVideoSlots !== null && filePaths.length > acceptedFilePaths.length) {
+        const maxVideos = this.getConfiguredMaxVideos();
         alert(
-          `Trial mode only saved ${acceptedFilePaths.length} video(s). ` +
-          `Limit is ${environment.trialLimits.maxVideos} total videos.`
+          `Only saved ${acceptedFilePaths.length} video(s). ` +
+          `Video limit is ${maxVideos} total.`
         );
       }
 
@@ -77,12 +79,21 @@ export class VideoUploadService {
   }
 
   private async getRemainingVideoSlots(): Promise<number | null> {
-    if (!environment.trialMode) {
+    const maxVideos = this.getConfiguredMaxVideos();
+    if (!Number.isFinite(maxVideos) || maxVideos <= 0) {
       return null;
     }
 
     const currentCount = await this.getSavedVideoCount();
-    return Math.max(0, environment.trialLimits.maxVideos - currentCount);
+    return Math.max(0, maxVideos - currentCount);
+  }
+
+  private getConfiguredMaxVideos(): number {
+    if (environment.trialMode) {
+      return environment.trialLimits.maxVideos;
+    }
+
+    return environment.fullLimits.maxVideos;
   }
 
   private async getSavedVideoCount(): Promise<number> {

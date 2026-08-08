@@ -572,29 +572,30 @@ ipcMain.handle('activate-key', (event, key) => {
   return activateKey(key);
 });
 
-ipcMain.handle('fetch-local-url-transcript', async (_event, sourceUrl) => {
-  try {
-    return await fetchLocalTranscriptFromUrl(sourceUrl);
-  } catch (error) {
-    console.error('fetch-local-url-transcript failed:', error);
-    return {
-      success: false,
-      error: error?.message || 'Unknown local transcript error.'
-    };
-  }
-});
-
-ipcMain.handle('check-local-transcribe-readiness', async () => {
-  try {
-    return getLocalTranscribeReadiness();
-  } catch (error) {
-    console.error('check-local-transcribe-readiness failed:', error);
-    return {
-      ready: false,
-      error: error?.message || 'Unknown readiness check error.'
-    };
-  }
-});
+// URL transcript parsing intentionally disabled for legal/compliance reasons.
+// ipcMain.handle('fetch-local-url-transcript', async (_event, sourceUrl) => {
+//   try {
+//     return await fetchLocalTranscriptFromUrl(sourceUrl);
+//   } catch (error) {
+//     console.error('fetch-local-url-transcript failed:', error);
+//     return {
+//       success: false,
+//       error: error?.message || 'Unknown local transcript error.'
+//     };
+//   }
+// });
+//
+// ipcMain.handle('check-local-transcribe-readiness', async () => {
+//   try {
+//     return getLocalTranscribeReadiness();
+//   } catch (error) {
+//     console.error('check-local-transcribe-readiness failed:', error);
+//     return {
+//       ready: false,
+//       error: error?.message || 'Unknown readiness check error.'
+//     };
+//   }
+// });
 
 
 // app.on('ready', createWindow)

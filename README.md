@@ -127,6 +127,25 @@ These rules define how transcript import/parsing should behave so output stays r
 - Settings page.
 - More video details on the Info page.
 - Mass delete selection option.
+- Build-time file split for stress-note injector so it is excluded from production bundles.
+
+## Build-Time Note Transform Replacement
+
+The note stress transform uses compile-time module replacement so release builds do not include the mock-note implementation.
+
+- Main implementation:
+  - `src/app/views/video/note-transform.ts`
+- Stub implementation:
+  - `src/app/views/video/note-transform.stub.ts`
+
+`VideoComponent` imports a stable function (`prepareLoadedNotes`) from `note-transform.ts`.
+For production and trial configurations, Angular file replacements swap that module for the stub during build.
+
+Result by build target:
+
+- `development`: mock notes implementation is included (for local stress testing).
+- `production`: stub (passthrough) is included.
+- `trial`: stub (passthrough) is included.
 
 ## Build and Run Electron packaging
 

@@ -35,6 +35,7 @@
         <span (click)="deleteButton()" class="delete-button button"
             [ngClass]="{'disabledButton': onKnownSignature === false }">Delete</span>
         <span (click)="openExportDialog()" class="export-button button">Export notes</span>
+        <span (click)="openShortcutsDialog()" class="shortcuts-button button">Shortcuts</span>
     </div>
 </div>
 
@@ -47,6 +48,29 @@
             <button (click)="handleExportFormat('csv')">CSV</button>
             <button (click)="handleExportFormat('pdf')">PDF</button>
             <button (click)="closeExportDialog()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<app-toast
+    [isVisible]="showSavedToast"
+    [message]="'Saved'"
+    [durationMs]="3000"
+    (dismissed)="hideSavedToast()"></app-toast>
+
+<div *ngIf="showShortcutsDialog" class="shortcuts-dialog-overlay" (click)="closeShortcutsDialog()">
+    <div class="shortcuts-dialog" (click)="$event.stopPropagation()">
+        <h3>Keyboard shortcuts</h3>
+        <div class="shortcuts-list">
+            <div class="shortcut-row"><span class="shortcut-key">Space</span><span>Play / Pause</span></div>
+            <div class="shortcut-row"><span class="shortcut-key">Left Arrow</span><span>Seek -5 seconds</span></div>
+            <div class="shortcut-row"><span class="shortcut-key">Right Arrow</span><span>Seek +5 seconds</span></div>
+            <div class="shortcut-row"><span class="shortcut-key">N</span><span>Create or jump to note at current time</span></div>
+            <div class="shortcut-row"><span class="shortcut-key">Cmd/Ctrl + S</span><span>Save all notes</span></div>
+            <div class="shortcut-row"><span class="shortcut-key">?</span><span>Show / hide this shortcuts window</span></div>
+        </div>
+        <div class="shortcuts-dialog-actions">
+            <button (click)="closeShortcutsDialog()">Close</button>
         </div>
     </div>
 </div>

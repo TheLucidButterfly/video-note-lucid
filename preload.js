@@ -49,11 +49,12 @@ contextBridge.exposeInMainWorld('fileAPI', {
   },
 });
 
-contextBridge.exposeInMainWorld('transcriptAPI', {
-  fetchLocalUrlTranscript: async (url) => {
-    return ipcRenderer.invoke('fetch-local-url-transcript', url);
-  },
-  checkLocalTranscribeReadiness: async () => {
-    return ipcRenderer.invoke('check-local-transcribe-readiness');
-  }
-});
+// URL transcript parsing intentionally disabled for legal/compliance reasons.
+// contextBridge.exposeInMainWorld('transcriptAPI', {
+//   fetchLocalUrlTranscript: async (url) => {
+//     return ipcRenderer.invoke('fetch-local-url-transcript', url);
+//   },
+//   checkLocalTranscribeReadiness: async () => {
+//     return ipcRenderer.invoke('check-local-transcribe-readiness');
+//   }
+// });
