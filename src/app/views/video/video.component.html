@@ -31,7 +31,7 @@
         [ngClass]="{'disabledButton': onKnownSignature === true }">{{(onKnownSignature) ? 'Editing' : 'Create note at '+
         formatSignatureDisplay(api ? api.time?.current : 0)}} </span>
     <div class="storage-buttons">
-        <span (click)="saveAllNotes()" class="save-button button">Save</span>
+        <span (click)="saveAllNotes(true)" class="save-button button">Save</span>
         <span (click)="deleteButton()" class="delete-button button"
             [ngClass]="{'disabledButton': onKnownSignature === false }">Delete</span>
         <span (click)="openExportDialog()" class="export-button button">Export notes</span>

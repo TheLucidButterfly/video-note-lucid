@@ -123,11 +123,13 @@ These rules define how transcript import/parsing should behave so output stays r
 
 ## TODO
 
-- Pagination for videos on Home page.
+- Improve keyboard shortcuts:
+  - Shift + Left/Right Arrow should seek by 15-second intervals.
+  - Left/Right Arrow behavior should still allow text cursor movement while typing in notes.
+  - Add a shortcut to go back to the previous screen.
 - Settings page.
 - More video details on the Info page.
 - Mass delete selection option.
-- Build-time file split for stress-note injector so it is excluded from production bundles.
 
 ## Build-Time Note Transform Replacement
 

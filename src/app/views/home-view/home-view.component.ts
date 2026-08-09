@@ -1,11 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, HostListener } from '@angular/core';
 import { StorageService } from '../../services/storage-service.service';
 import { Router } from '@angular/router';
 import { LoadingNotificationService } from 'src/app/services/loading-notification/loading-notification.service';
 import { Observable } from 'rxjs';
 import { CentralService } from 'src/app/services/central.service';
 import { VideoUploadService } from 'src/app/services/video-upload.service';
-import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-home-view',
@@ -13,24 +12,19 @@ import { environment } from 'src/environments/environment';
   styleUrls: ['./home-view.component.css']
 })
 export class HomeViewComponent {
+  readonly videosPerPage = 24;
+  private homeDragDepth = 0;
 
-  readonly environment = environment;
   // URL import intentionally disabled for legal/compliance reasons.
   // readonly allowUrlInput = environment.allowUrlInput;
   readonly homeDevButtonsDeveloped = false;
-  locationRef = location;
-  title = 'video-notes';
-
-  // *legacy
-  // savedVideos: SavedVideo[] = []
-
-  storedPaths: any
-  pageViewing = 'Home'
+  storedPaths: any[] = [];
+  homePage = 1;
+  totalHomePages = 1;
   loading = false;
-  devMode = true;
   showDialog = false;
   showDeleteDialog = false;
-  showAddModeDialog = false;
+  isDragOverHome = false;
   // URL import intentionally disabled for legal/compliance reasons.
   // showUrlImportDialog = false;
   // importUrlInput = '';
@@ -53,11 +47,16 @@ export class HomeViewComponent {
     this.refreshVideoPathList().subscribe({
       next: (storedPaths) => {
         this.storedPaths = storedPaths ?? [];
+
+        this.totalHomePages = Math.max(1, Math.ceil(this.storedPaths.length / this.videosPerPage));
+        this.homePage = Math.min(this.homePage, this.totalHomePages);
         this.isLoading(false);
       },
       error: (error) => {
-        console.error('test1: Failed to load stored paths', error);
+        console.error('Failed to load stored paths', error);
         this.storedPaths = [];
+        this.homePage = 1;
+        this.totalHomePages = 1;
         this.isLoading(false);
       }
     })
@@ -75,23 +74,6 @@ export class HomeViewComponent {
     this.isLoading(true);
     return this.storageService.getSavedPaths()
   }
-
-  // *Legacy
-  // refreshVideoList() {
-  //   this.isLoading(true);
-  //   this.storageService
-  //     .getVideos()
-  //     .subscribe((storedVideos) => {
-  //       storedVideos ? this.savedVideos = storedVideos : [];
-  //       this.isLoading(false);
-  //     })
-  // }
-
-  // *Legacy
-  // navigateToVideoScreen(videoIndex: any) {
-  //   let index = { index: videoIndex }
-  //   this.router.navigate(['video'], { queryParams: index })
-  // }
 
   nagivateToUrlScreen(videoUrlIndex: any) {
     let index = { index: videoUrlIndex }
@@ -138,62 +120,196 @@ export class HomeViewComponent {
     this.loadStoredPaths();
   }
 
-  openAddModeDialog() {
-    this.showAddModeDialog = true;
+  onHomeDragEnter(event: DragEvent) {
+    if (!this.hasFileDragPayload(event)) {
+      return;
+    }
+
+    event.preventDefault();
+    this.homeDragDepth += 1;
+    this.isDragOverHome = true;
   }
 
-  closeAddModeDialog() {
-    this.showAddModeDialog = false;
+  onHomeDragOver(event: DragEvent) {
+    if (!this.hasFileDragPayload(event)) {
+      return;
+    }
+
+    event.preventDefault();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'copy';
+    }
+    this.isDragOverHome = true;
   }
 
-  async chooseImportVideoMode() {
-    this.closeAddModeDialog();
-    await this.openUploader();
+  onHomeDragLeave(event: DragEvent) {
+    if (!this.hasFileDragPayload(event)) {
+      return;
+    }
+
+    event.preventDefault();
+    this.homeDragDepth = Math.max(0, this.homeDragDepth - 1);
+    if (this.homeDragDepth === 0) {
+      this.isDragOverHome = false;
+    }
   }
 
-  // URL import intentionally disabled for legal/compliance reasons.
-  // chooseUrlImportMode() {
-  //   if (!this.allowUrlInput) {
-  //     return;
-  //   }
-  //
-  //   this.closeAddModeDialog();
-  //   this.importUrlInput = '';
-  //   this.importUrlError = '';
-  //   this.showUrlImportDialog = true;
-  // }
-  //
-  // closeUrlImportDialog() {
-  //   this.showUrlImportDialog = false;
-  //   this.importUrlError = '';
-  // }
-  //
-  // submitUrlImport() {
-  //   const normalized = (this.importUrlInput || '').trim();
-  //
-  //   if (!normalized) {
-  //     this.importUrlError = 'Please enter a URL.';
-  //     return;
-  //   }
-  //
-  //   if (!this.isLikelyWebUrl(normalized)) {
-  //     this.importUrlError = 'Please enter a valid http(s) URL.';
-  //     return;
-  //   }
-  //
-  //   this.showUrlImportDialog = false;
-  //   this.importUrlError = '';
-  //   this.router.navigate(['video-text'], { queryParams: { url: normalized } });
-  // }
-  //
-  // private isLikelyWebUrl(value: string): boolean {
-  //   try {
-  //     const parsed = new URL(value);
-  //     return parsed.protocol === 'http:' || parsed.protocol === 'https:';
-  //   } catch {
-  //     return false;
-  //   }
-  // }
+  async onHomeDrop(event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    await this.handleDropEvent(event);
+  }
+
+  @HostListener('document:dragover', ['$event'])
+  onDocumentDragOver(event: DragEvent) {
+    if (!this.hasFileDragPayload(event)) {
+      return;
+    }
+
+    event.preventDefault();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'copy';
+    }
+    this.isDragOverHome = true;
+  }
+
+  @HostListener('document:drop', ['$event'])
+  async onDocumentDrop(event: DragEvent) {
+    if (event.defaultPrevented) {
+      return;
+    }
+
+    event.preventDefault();
+    await this.handleDropEvent(event);
+  }
+
+  @HostListener('document:dragleave', ['$event'])
+  onDocumentDragLeave(event: DragEvent) {
+    if (!this.hasFileDragPayload(event)) {
+      return;
+    }
+
+    const leavingWindow = event.clientX <= 0 || event.clientY <= 0;
+    if (leavingWindow) {
+      this.homeDragDepth = 0;
+      this.isDragOverHome = false;
+    }
+  }
+
+  private async handleDropEvent(event: DragEvent) {
+    this.homeDragDepth = 0;
+    this.isDragOverHome = false;
+
+    const filePaths = this.getDroppedFilePaths(event);
+
+    if (!filePaths.length) {
+      return;
+    }
+
+    const uploadResult = await this.videoUploadService.persistVideoPaths(filePaths);
+
+    if (!uploadResult) {
+      return;
+    }
+
+    this.loadStoredPaths();
+  }
+
+  private hasFileDragPayload(event: DragEvent): boolean {
+    const dragTypes = event.dataTransfer?.types;
+    if (!dragTypes || dragTypes.length === 0) {
+      return false;
+    }
+
+    const typeSet = new Set(Array.from(dragTypes));
+    const result = typeSet.has('Files') || typeSet.has('text/uri-list') || typeSet.has('public.file-url');
+    return result;
+  }
+
+  private getDroppedFilePaths(event: DragEvent): string[] {
+    const seenPaths = new Set<string>();
+    const pushPath = (maybePath: string | undefined | null) => {
+      if (typeof maybePath !== 'string') {
+        return;
+      }
+      const trimmed = maybePath.trim();
+      if (!trimmed) {
+        return;
+      }
+      seenPaths.add(trimmed);
+    };
+
+    const droppedItems = event.dataTransfer?.items;
+    if (droppedItems?.length) {
+      for (const item of Array.from(droppedItems)) {
+        const itemFile = item.getAsFile();
+        const itemPath = this.resolveDroppedFilePath(itemFile);
+        pushPath(itemPath);
+      }
+    }
+
+    const droppedFiles = event.dataTransfer?.files;
+    if (droppedFiles?.length) {
+      for (const file of Array.from(droppedFiles)) {
+        const filePath = this.resolveDroppedFilePath(file);
+        pushPath(filePath);
+      }
+    }
+
+    // Fallback for platforms/browsers that provide dropped paths via URI text.
+    const uriList = event.dataTransfer?.getData('text/uri-list') || event.dataTransfer?.getData('text/plain') || '';
+    if (uriList.trim().length > 0) {
+      const uriLines = uriList
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0 && !line.startsWith('#'));
+
+      for (const uri of uriLines) {
+        const normalizedPath = this.tryParseFileUri(uri);
+        if (normalizedPath) {
+          pushPath(normalizedPath);
+        }
+      }
+    }
+
+    return Array.from(seenPaths);
+  }
+
+  private resolveDroppedFilePath(file: File | null): string {
+    if (!file) {
+      return '';
+    }
+
+    const directPath = (file as any)?.path;
+    if (typeof directPath === 'string' && directPath.trim().length > 0) {
+      return directPath.trim();
+    }
+
+    const resolvedPath = (window as any)?.electron?.webUtils?.getPathForFile?.(file);
+    if (typeof resolvedPath === 'string' && resolvedPath.trim().length > 0) {
+      return resolvedPath.trim();
+    }
+
+    console.warn('Unable to resolve dropped file path', {
+      name: file.name,
+      type: file.type,
+      size: file.size,
+    });
+    return '';
+  }
+
+  private tryParseFileUri(value: string): string {
+    try {
+      const maybeUrl = new URL(value);
+      if (maybeUrl.protocol !== 'file:') {
+        return '';
+      }
+
+      return decodeURIComponent(maybeUrl.pathname || '');
+    } catch {
+      return '';
+    }
+  }
 
   isLoading(loading: boolean) {
     if (loading) {

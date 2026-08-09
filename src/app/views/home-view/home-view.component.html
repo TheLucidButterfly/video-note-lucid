@@ -12,10 +12,9 @@
     </div>
   </div>
 </div> -->
-<app-dialog *ngIf="showDialog" class="dialog" [currentView]="'activateForm'" (dialogOpen)="showDialog = $event"></app-dialog>
+<app-dialog *ngIf="showDialog" [currentView]="'activateForm'" (dialogOpen)="showDialog = $event"></app-dialog>
 <app-dialog
   *ngIf="showDeleteDialog"
-  class="dialog"
   [currentView]="'confirm'"
   [titleText]="'Delete file?'"
   [messageText]="'Are you sure you want to delete ' + pendingDeleteTitle + '?'"
@@ -24,19 +23,6 @@
   (dialogOpen)="showDeleteDialog = $event"
   (confirmed)="handleDeleteConfirmation($event)">
 </app-dialog>
-
-<div *ngIf="showAddModeDialog" class="mode-dialog-overlay" (click)="closeAddModeDialog()">
-  <div class="mode-dialog" (click)="$event.stopPropagation()">
-    <h3>Add Content</h3>
-    <p>Choose how you want to add a new item.</p>
-    <div class="mode-dialog-actions">
-      <button class="mode-btn" (click)="chooseImportVideoMode()">Import Video File</button>
-      <!-- URL import intentionally disabled for legal/compliance reasons. -->
-      <!-- <button *ngIf="allowUrlInput" class="mode-btn" (click)="chooseUrlImportMode()">Input URL (Video-to-Text)</button> -->
-      <button class="mode-btn ghost" (click)="closeAddModeDialog()">Cancel</button>
-    </div>
-  </div>
-</div>
 
 <!-- URL import modal intentionally disabled for legal/compliance reasons. -->
 <!-- <div *ngIf="showUrlImportDialog" class="mode-dialog-overlay" (click)="closeUrlImportDialog()">
@@ -57,7 +43,12 @@
   </div>
 </div> -->
 
-<div class="appContainer">
+<div
+  class="appContainer"
+  (dragenter)="onHomeDragEnter($event)"
+  (dragover)="onHomeDragOver($event)"
+  (dragleave)="onHomeDragLeave($event)"
+  (drop)="onHomeDrop($event)">
   <div *ngIf="homeDevButtonsDeveloped || !centralService.isPremiumUser()" class="devToolContainer">
     <ng-container *ngIf="homeDevButtonsDeveloped">
       <span (click)="deleteAllVideoPaths();" class="delete-all-button clickable">Delete All</span>
@@ -67,14 +58,29 @@
     </ng-container>
     <span *ngIf="!centralService.isPremiumUser()" (click)="showDialog = true" class="activateButton clickable">Activate</span>
   </div>
-  <div class="home-actions">
+  <div class="home-toolbar">
+    <button class="add-video-button clickable" (click)="openUploader()">+ Add Video</button>
     <button class="info-link-button clickable" (click)="navigateToInfoPage()">Info & Support</button>
   </div>
   <div *ngIf="loading" class="home-loading-hint">Loading video references...</div>
   <div *ngIf="!loading && (!storedPaths || storedPaths.length === 0)" class="home-loading-hint">No saved videos yet. Click + to add one.</div>
-  <div class="gridContainer">
-    <div (click)="openAddModeDialog()" class="gridTile clickable">+</div>
-    <div *ngFor="let path of storedPaths; let i = index" class="gridTile videoTile clickable" (click)="nagivateToUrlScreen(i)">
+  <div *ngIf="!loading && storedPaths && storedPaths.length > 0" class="home-list-header">
+    <div class="home-page-summary">Video count: {{ storedPaths.length }}</div>
+    <div class="home-page-meta" *ngIf="storedPaths.length > videosPerPage">Page {{ homePage }} of {{ totalHomePages }}</div>
+    <pagination-controls
+      *ngIf="storedPaths.length > videosPerPage"
+      class="home-pagination"
+      (pageChange)="homePage = $event"
+      previousLabel=""
+      nextLabel=""></pagination-controls>
+  </div>
+  <div
+    class="gridDropZone"
+    [class.drag-over]="isDragOverHome">
+    <div class="drag-overlay" *ngIf="isDragOverHome">Drop video files to add them</div>
+    <div class="gridContainer">
+    <div *ngFor="let path of storedPaths | paginate: { itemsPerPage: videosPerPage, currentPage: homePage }; let i = index"
+      class="gridTile videoTile clickable" (click)="nagivateToUrlScreen(((homePage - 1) * videosPerPage) + i)">
       <video
         class="tileVideo"
         [src]="buildVideoFileUrl(path.path)"
@@ -86,7 +92,8 @@
       <div class="tileTitleWrap">
         <span class="tileTitle">{{path.path | fileNameFromPath}}</span>
       </div>
-      <span class="delete-button clickable" (click)="$event.stopPropagation(); requestDeleteVideoPath(i, path.path)">X</span>
+      <span class="delete-button clickable" (click)="$event.stopPropagation(); requestDeleteVideoPath(((homePage - 1) * videosPerPage) + i, path.path)">X</span>
     </div>
   </div>
+</div>
 </div>

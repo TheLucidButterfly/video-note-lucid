@@ -31,7 +31,7 @@ export class AppComponent {
         this.centralService.isPremium = isPremiumStatus;
       },
       error: (error) => {
-        console.error('test1: loadPremiumStatus failed', error);
+        console.error('loadPremiumStatus failed', error);
       },
       complete: () => {
         this.LoadingService.hide();

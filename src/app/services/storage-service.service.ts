@@ -196,6 +196,12 @@ export class StorageService {
       }))
   }
 
+  // DEV_ONLY: This method is intended for development purposes to replace the entire video paths array with a new one. Use with caution. 
+  replaceVideoPaths(paths: PathNotes[]) {
+    const normalized = Array.isArray(paths) ? paths : [];
+    return from(this.safeSet('videoPaths', JSON.stringify(normalized)).then(() => normalized));
+  }
+
   saveUploadedVideo(videoList: NgxFileDropEntry[]): Observable<any[]> {
     return from(this.utilityService.extractVideoResources(videoList))
       .pipe(

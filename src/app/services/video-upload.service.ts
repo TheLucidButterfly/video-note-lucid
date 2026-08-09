@@ -29,6 +29,28 @@ export class VideoUploadService {
         return null;
       }
 
+      const filePaths: string[] = await electronApi.ipcRenderer.invoke('openDialog');
+      if (!filePaths?.length) {
+        return null;
+      }
+      return this.persistVideoPaths(filePaths);
+    } catch (error: any) {
+      console.error('selectVideoAndPersist failed:', error);
+      alert(`Upload failed: ${error?.message || 'unknown error'}`);
+      return null;
+    }
+  }
+
+  /**
+   * Saves video paths supplied by external sources such as drag-and-drop.
+   */
+  async persistVideoPaths(filePaths: string[]): Promise<VideoUploadResult | null> {
+    try {
+      const normalizedPaths = this.normalizeFilePaths(filePaths);
+      if (!normalizedPaths.length) {
+        return null;
+      }
+
       const remainingVideoSlots = await this.getRemainingVideoSlots();
       if (remainingVideoSlots === 0) {
         const currentCount = await this.getSavedVideoCount();
@@ -40,19 +62,14 @@ export class VideoUploadService {
         return null;
       }
 
-      const filePaths: string[] = await electronApi.ipcRenderer.invoke('openDialog');
-      if (!filePaths?.length) {
-        return null;
-      }
-
       const acceptedFilePaths =
-        remainingVideoSlots === null ? filePaths : filePaths.slice(0, remainingVideoSlots);
+        remainingVideoSlots === null ? normalizedPaths : normalizedPaths.slice(0, remainingVideoSlots);
 
       if (!acceptedFilePaths.length) {
         return null;
       }
 
-      if (remainingVideoSlots !== null && filePaths.length > acceptedFilePaths.length) {
+      if (remainingVideoSlots !== null && normalizedPaths.length > acceptedFilePaths.length) {
         const maxVideos = this.getConfiguredMaxVideos();
         alert(
           `Only saved ${acceptedFilePaths.length} video(s). ` +
@@ -72,7 +89,7 @@ export class VideoUploadService {
         firstNewPathIndex,
       };
     } catch (error: any) {
-      console.error('selectVideoAndPersist failed:', error);
+      console.error('persistVideoPaths failed:', error);
       alert(`Upload failed: ${error?.message || 'unknown error'}`);
       return null;
     }
@@ -116,12 +133,29 @@ export class VideoUploadService {
     });
   }
 
-  private createPathObject(paths: string[]) {
-    return paths.map(path => {
-      return {
-        path,
-        notes: []
+  private normalizeFilePaths(filePaths: string[]): string[] {
+    if (!Array.isArray(filePaths)) {
+      return [];
+    }
+
+    const uniquePaths = new Set<string>();
+    for (const rawPath of filePaths) {
+      if (typeof rawPath !== 'string') {
+        continue;
       }
-    })
+
+      const trimmedPath = rawPath.trim();
+      if (!trimmedPath) {
+        continue;
+      }
+
+      uniquePaths.add(trimmedPath);
+    }
+
+    return Array.from(uniquePaths);
+  }
+
+  private createPathObject(paths: string[]) {
+    return paths.map((path) => ({ path, notes: [] }));
   }
 }
