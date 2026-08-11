@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, SimpleChanges } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, Output, SimpleChanges, ViewChild } from '@angular/core';
 import { TimeSignatureObject } from 'src/app/interfaces/time-signature-object.interface';
 
 @Component({
@@ -7,18 +7,23 @@ import { TimeSignatureObject } from 'src/app/interfaces/time-signature-object.in
   styleUrls: ['./text-area.component.css']
 })
 export class TextAreaComponent {
+  private readonly notePreviewMaxLength = 72;
+  readonly notesPerPage = 10;
 
   @Input('selectedSignatureObject') selectedSignatureObject: any;
   @Input('notesArray') notesArray: TimeSignatureObject[] = [];
   @Output() updateCurrentTimeEmit = new EventEmitter();
   @Output() updateCurrentText = new EventEmitter();
   @Output() changeSelectedTime = new EventEmitter();
+  @Output() noteDirty = new EventEmitter<string>();
+  @Input() dirtyKeys: Set<string> = new Set();
   @Input() currentTime?: any;
   @Input() api?: any;
+  @ViewChild('textArea') textAreaRef?: ElementRef<HTMLTextAreaElement>;
 
   timeSignatureArray: TimeSignatureObject[] = [];
 
-  page = 0;
+  page = 1;
 
   ngOnInit(): void { }
 
@@ -26,12 +31,12 @@ export class TextAreaComponent {
     if (changes && !changes['selectedSignatureObject']) {
       // Handle ticks
       this.updateCurrentTimeEmit.emit(this.currentTime | 0);
-      this.handleChangedText(this.selectedSignatureObject.notes)
     }
   }
 
   handleChangedText(event: any) {
-    this.updateCurrentText.emit(event?.target?.value || '')
+    this.updateCurrentText.emit(event?.target?.value || '');
+    this.noteDirty.emit(this.selectedSignatureObject?.timeSignature ?? '');
   }
 
   noteExists() {
@@ -46,6 +51,25 @@ export class TextAreaComponent {
     if (this.api.state === 'playing') {
       this.api.pause();
     }
+  }
+
+  focusEditorField() {
+    this.focusTextArea();
+    this.textAreaRef?.nativeElement?.focus();
+  }
+
+  getNotePreview(note: string | null | undefined): string {
+    const normalized = (note || '').replace(/\s+/g, ' ').trim();
+
+    if (!normalized) {
+      return '(empty)';
+    }
+
+    if (normalized.length <= this.notePreviewMaxLength) {
+      return normalized;
+    }
+
+    return `${normalized.slice(0, this.notePreviewMaxLength).trimEnd()}...`;
   }
 
 }

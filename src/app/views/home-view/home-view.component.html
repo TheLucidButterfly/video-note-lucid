@@ -12,21 +12,91 @@
     </div>
   </div>
 </div> -->
-<app-notes-limit-dialog *ngIf="showDialog" class="dialog" [currentView]="'activateForm'" (dialogOpen)="showDialog = $event"></app-notes-limit-dialog>
+<app-dialog *ngIf="showDialog" [currentView]="'activateForm'" (dialogOpen)="showDialog = $event"></app-dialog>
+<app-dialog
+  *ngIf="showDeleteDialog"
+  [currentView]="'confirm'"
+  [titleText]="'Delete file?'"
+  [messageText]="'Are you sure you want to delete ' + pendingDeleteTitle + '?'"
+  [confirmText]="'Yes'"
+  [cancelText]="'No'"
+  (dialogOpen)="showDeleteDialog = $event"
+  (confirmed)="handleDeleteConfirmation($event)">
+</app-dialog>
 
-<div class="appContainer">
-  <div *ngIf="true" class="devToolContainer">
-    <span (click)="storageService.clearAllVideoPaths(); refreshVideoPathList();" class="delete-all-button clickable">Delete All</span>
-    <br>
-    <span (click)="navigateToDevTools()" class="savedAllDataButton clickable">View Saved Data</span>
-    <br>
-    <span *ngIf="!centralService.isPremiumUser()" (click)="showDialog = true" class="activateButton clickable">Activate</span>
-  </div>
-  <div class="gridContainer">
-    <div routerLink="/uploader" class="gridTile clickable">+</div>
-    <div *ngFor="let path of storedPaths; let i = index"  class="gridTile">
-      <span class="delete-button clickable" (click)="deleteVideoPath(i)">X</span>
-      <span class="tileSpan clickable" (click)="nagivateToUrlScreen(i)">{{path.path | fileNameFromPath}}</span>
+<!-- URL import modal intentionally disabled for legal/compliance reasons. -->
+<!-- <div *ngIf="showUrlImportDialog" class="mode-dialog-overlay" (click)="closeUrlImportDialog()">
+  <div class="mode-dialog" (click)="$event.stopPropagation()">
+    <h3>Video Link Input</h3>
+    <p>Paste a YouTube or direct video URL. Transcript parsing opens in a dedicated view.</p>
+    <input
+      class="url-input"
+      type="text"
+      placeholder="https://..."
+      [(ngModel)]="importUrlInput"
+      (keyup.enter)="submitUrlImport()" />
+    <div *ngIf="importUrlError" class="url-error">{{ importUrlError }}</div>
+    <div class="mode-dialog-actions">
+      <button class="mode-btn" (click)="submitUrlImport()">Continue</button>
+      <button class="mode-btn ghost" (click)="closeUrlImportDialog()">Cancel</button>
     </div>
   </div>
+</div> -->
+
+<div
+  class="appContainer"
+  (dragenter)="onHomeDragEnter($event)"
+  (dragover)="onHomeDragOver($event)"
+  (dragleave)="onHomeDragLeave($event)"
+  (drop)="onHomeDrop($event)">
+  <div *ngIf="homeDevButtonsDeveloped || !centralService.isPremiumUser()" class="devToolContainer">
+    <ng-container *ngIf="homeDevButtonsDeveloped">
+      <span (click)="deleteAllVideoPaths();" class="delete-all-button clickable">Delete All</span>
+      <br>
+      <span (click)="navigateToDevTools()" class="savedAllDataButton clickable">View Saved Data</span>
+      <br>
+    </ng-container>
+    <span *ngIf="!centralService.isPremiumUser()" (click)="showDialog = true" class="activateButton clickable">Activate</span>
+  </div>
+  <div class="home-toolbar">
+    <button class="add-video-button clickable" (click)="openUploader()">+ Add Video</button>
+    <div class="home-toolbar-actions">
+      <button *ngIf="settingsPageEnabled" class="info-link-button clickable" (click)="navigateToSettingsPage()">Settings</button>
+      <button class="info-link-button clickable" (click)="navigateToInfoPage()">Info & Support</button>
+    </div>
+  </div>
+  <div *ngIf="loading" class="home-loading-hint">Loading video references...</div>
+  <div *ngIf="!loading && (!storedPaths || storedPaths.length === 0)" class="home-loading-hint">No saved videos yet. Click + to add one.</div>
+  <div *ngIf="!loading && storedPaths && storedPaths.length > 0" class="home-list-header">
+    <div class="home-page-summary">Video count: {{ storedPaths.length }}</div>
+    <div class="home-page-meta" *ngIf="storedPaths.length > videosPerPage">Page {{ homePage }} of {{ totalHomePages }}</div>
+    <pagination-controls
+      *ngIf="storedPaths.length > videosPerPage"
+      class="home-pagination"
+      (pageChange)="homePage = $event"
+      previousLabel=""
+      nextLabel=""></pagination-controls>
+  </div>
+  <div
+    class="gridDropZone"
+    [class.drag-over]="isDragOverHome">
+    <div class="drag-overlay" *ngIf="isDragOverHome">Drop video files to add them</div>
+    <div class="gridContainer">
+    <div *ngFor="let path of storedPaths | paginate: { itemsPerPage: videosPerPage, currentPage: homePage }; let i = index"
+      class="gridTile videoTile clickable" (click)="nagivateToUrlScreen(((homePage - 1) * videosPerPage) + i)">
+      <video
+        class="tileVideo"
+        [src]="buildVideoFileUrl(path.path)"
+        preload="metadata"
+        muted
+        playsinline
+        (loadedmetadata)="seekTilePreviewFrame($event)">
+      </video>
+      <div class="tileTitleWrap">
+        <span class="tileTitle">{{path.path | fileNameFromPath}}</span>
+      </div>
+      <span class="delete-button clickable" (click)="$event.stopPropagation(); requestDeleteVideoPath(((homePage - 1) * videosPerPage) + i, path.path)">X</span>
+    </div>
+  </div>
+</div>
 </div>

@@ -5,6 +5,10 @@
 <ng-container *ngIf="currentView === 'activateForm'">
   <ng-container *ngTemplateOutlet="activateFormTemplate"></ng-container>
 </ng-container>
+
+<ng-container *ngIf="currentView === 'confirm'">
+  <ng-container *ngTemplateOutlet="confirmTemplate"></ng-container>
+</ng-container>
   
   <ng-template #limitExceededTemplate>
     <div class="dialog-overlay" *ngIf="isDialogVisible">
@@ -65,4 +69,19 @@
     </div>
       
 
+  </ng-template>
+
+  <ng-template #confirmTemplate>
+    <div class="dialog-overlay" *ngIf="isDialogVisible">
+      <div class="dialog">
+        <h1>{{ titleText }}</h1>
+        <p>{{ messageText }}</p>
+
+        <div class="dialog-buttons">
+          <button *ngIf="showStay" class="btn-ghost" (click)="stayHere()">{{ stayText }}</button>
+          <button class="btn-cancel" (click)="confirmNo()">{{ cancelText }}</button>
+          <button class="btn-action" (click)="confirmYes()">{{ confirmText }}</button>
+        </div>
+      </div>
+    </div>
   </ng-template>

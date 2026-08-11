@@ -40,9 +40,47 @@
 
 .current-video-title {
   padding-left: 10px;
+  display: block;
+  overflow: hidden;
+}
+
+.title-label {
+  display: block;
+  line-height: 1.1;
+}
+
+.title-path {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  font-size: 19px;
+}
+
+.title-hint {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  opacity: 0.85;
 }
 
 .title-container {
-  overflow: scroll;
+  overflow: hidden;
   margin: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.trial-badge {
+  margin-left: auto;
+  margin-right: 12px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #f7c948;
+  color: #2a1f00;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
 }

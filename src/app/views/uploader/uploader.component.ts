@@ -6,14 +6,8 @@ import { finalize } from 'rxjs';
 import { LoadingNotificationService } from 'src/app/services/loading-notification/loading-notification.service';
 import { UserData } from 'src/app/interfaces/user-data.interface';
 import { environment, uploadModes } from 'src/environments/environment';
+import { VideoUploadService } from 'src/app/services/video-upload.service';
 // import { FileDialogService } from 'src/app/services/file-dialog.service';
-declare global {
-  interface Window {
-    electron: any;
-  }
-}
-
-const { ipcRenderer } = window.electron;
 
 @Component({
   selector: 'app-uploader',
@@ -36,47 +30,40 @@ export class UploaderComponent {
   totalPendingBytes = 0;
 
   uploadedFileNames: string[] = []
+  savedFileCount = 0;
+  savedNoteCount = 0;
 
   constructor(
     private router: Router,
     private storageService: StorageService,
-    private loader: LoadingNotificationService) { }
+    private loader: LoadingNotificationService,
+    private videoUploadService: VideoUploadService) { }
 
   ngOnInit(): void {
     this.isLoading(false);
+    this.loadInfoPageData();
+  }
+
+  private loadInfoPageData() {
     this.setUserData();
-    
-    setTimeout(() => {
-      this.storageService.getSavedPaths().subscribe(
-        res => {
-          console.log('got paths:',res)
-        }
-      )
-    }, 1000);
-  }
-
-  // Electron dialog
-  selectVideo() {  
-    (window as any).electron.ipcRenderer.invoke('openDialog').then((filePaths: string[]) => {
-          this.uploadedFileNames = this.getUploadedFileNamesList(filePaths);
-          this.storageService.saveExtractedVideoPaths(this.createPathObject(filePaths) as any);
-        });
-  }
-
-  getUploadedFileNamesList(filePaths: string[]): string[]{
-    return filePaths.map(filePath => {
-      const parts = filePath.split(/[/\\]/);
-      return parts[parts.length - 1];
+    this.storageService.getSavedPaths().subscribe(paths => {
+      const savedPaths = paths ?? [];
+      this.savedFileCount = savedPaths.length;
+      this.savedNoteCount = savedPaths.reduce((accumulator: number, savedPath: any) => {
+        return accumulator + (savedPath?.notes?.length || 0);
+      }, 0);
     });
   }
 
-  createPathObject(paths: string[]){
-    return paths.map(path => {
-      return {
-        path:path,
-        notes: []
-      }
-    })
+  // Electron dialog
+  async selectVideo() {
+    const uploadResult = await this.videoUploadService.selectVideoAndPersist();
+    if (!uploadResult) {
+      return;
+    }
+
+    this.uploadedFileNames = uploadResult.selectedFileNames;
+    this.loadInfoPageData();
   }
 
   private setUserData() {
@@ -130,7 +117,6 @@ export class UploaderComponent {
       //   let analyzedFile = await this.analyzeFileData(file);
       //   this.pendingFilesMetadata.push(analyzedFile)
       // })
-      console.log('pendingFiles:',this.pendingFiles)
     } else if (environment.uploadMode == uploadModes.saved) {
       this.pendingFiles = [];
       this.pendingFiles = droppedFiles;

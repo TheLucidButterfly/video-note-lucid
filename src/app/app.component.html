@@ -1,12 +1,31 @@
 <div class="app-container">
   <div class="app-header">
-    <div *ngIf="!isHomePage"(click)="navigateHome()" class="home-button clickable">
+    <div *ngIf="!isHomePage" (click)="navigateHome()" class="home-button clickable">
       Home
     </div>
     <div *ngIf="centralService.title$  | async; let currentVideoTitle" class="title-container">
-      <span class="current-video-title">You are viewing: {{currentVideoTitle}}</span>
+      <div class="current-video-title" [title]="currentVideoTitle || ''">
+        <span class="title-label">You are viewing:</span>
+        <span class="title-path">{{ formatDisplayPath(currentVideoTitle) }}</span>
+        <span class="title-hint">Hover for full path</span>
+      </div>
    </div>
+    <div *ngIf="environment.trialMode && !centralService.isPremium" class="trial-badge">
+      Trial Mode
+    </div>
   </div>
   <router-outlet></router-outlet>
   <app-spinner *ngIf="LoadingService.loading$ | async" id='loadingIndicator' class="app-spinner"></app-spinner>
+  <app-dialog
+    *ngIf="showUnsavedDialog"
+    [currentView]="'confirm'"
+    [showStay]="true"
+    [titleText]="'Unsaved Notes'"
+    [messageText]="'Your notes are unsaved.'"
+    [confirmText]="'Save'"
+    [cancelText]="'Discard'"
+    (dialogOpen)="showUnsavedDialog = $event"
+    (confirmed)="onUnsavedDialogConfirmed($event)"
+    (stayed)="showUnsavedDialog = false">
+  </app-dialog>
 </div>

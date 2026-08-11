@@ -1,0 +1,68 @@
+.toast {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(21, 72, 43, 0.95);
+  color: #fff;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  z-index: 1200;
+  animation-name: toastFadeCycle;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+@keyframes toastFadeCycle {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -46%);
+  }
+
+  33.333% {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+
+  66.666% {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -54%);
+  }
+}
+
+.toast-message {
+  line-height: 1.2;
+}
+
+.toast-close {
+  background: transparent;
+  border: 0;
+  color: #fff;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0 2px;
+  cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .toast {
+    left: 50%;
+    top: 50%;
+    right: auto;
+    bottom: auto;
+    transform: translate(-50%, -50%);
+    max-width: calc(100vw - 32px);
+    justify-content: space-between;
+  }
+}

@@ -3,20 +3,34 @@
   "main": "app.js",
   "productName": "Vide-note",
   "version": "1.0.0",
+  "description": "Video note-taking app built with Angular and Electron",
+  "author": "Anthony Joseph Calderaio Jr.",
   "license": "MIT",
   "build": {
+    "asarUnpack": [
+      "local-binaries/**/*"
+    ],
     "files": [
-      "dist/**/*"
+      "dist/**/*",
+      "app.js",
+      "preload.js",
+      "electron-api/**/*",
+      "local-binaries/**/*"
     ],
     "appId": "com.vide-note.app",
     "directories": {
       "output": "release",
-      "buildResources": "dist"
+      "buildResources": "build"
     },
     "mac": {
       "target": [
         "dmg"
       ],
+      "icon": "build/icon.icns",
+      "hardenedRuntime": true,
+      "entitlements": "entitlements.plist",
+      "entitlementsInherit": "entitlements.plist",
+      "gatekeeperAssess": false,
       "mergeASARs": false
     },
     "dmg": {
@@ -45,16 +59,26 @@
   "scripts": {
     "ng": "ng",
     "start": "electron-forge start",
-    "start:electron": "ng build --configuration production && electron .",
+    "start:electron": "if [ \"$npm_config_trial\" = \"true\" ]; then ng build --configuration trial; else ng build --configuration development; fi && electron .",
+    "start:electron:trial": "OPEN_DEVTOOLS=${npm_config_devtools:-false} ng build --configuration trial && OPEN_DEVTOOLS=${npm_config_devtools:-false} electron .",
     "build": "ng build",
     "build:develop": "ng build --configuration development",
     "build:prod": "ng build --configuration production",
+    "build:trial": "ng build --configuration trial",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
+    "test:ci": "ng test --watch=false --browsers=ChromeHeadless",
     "package": "electron-forge package",
+    "preflight:mac:signed": "node scripts/preflight-mac-signing.js",
+    "check:local-binaries": "node scripts/check-local-binaries.js",
     "remove-builds": "rm -rf dist && rm -rf out",
-    "make:mac:m-series": "npm run remove-builds && ng build --configuration=production && electron-forge make  --config ./forge.config.js",
-    "make:mac:intel": "electron-forge make --arch=x64",
+    "make:mac:m-series": "npm run remove-builds && ng build --configuration=production && env -u APPLE_ID -u APPLE_APP_SPECIFIC_PASSWORD -u APPLE_TEAM_ID CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac dmg --arm64",
+    "make:mac:m-series:signed": "npm run preflight:mac:signed && npm run test:ci && npm run remove-builds && ng build --configuration=production && CSC_IDENTITY_AUTO_DISCOVERY=true electron-builder --mac dmg --arm64",
+    "make:mac:m-series:trial": "npm run remove-builds && ng build --configuration=trial && env -u APPLE_ID -u APPLE_APP_SPECIFIC_PASSWORD -u APPLE_TEAM_ID CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac dmg --arm64",
+    "make:mac:m-series:trial:signed": "npm run preflight:mac:signed && npm run test:ci && npm run remove-builds && ng build --configuration=trial && CSC_IDENTITY_AUTO_DISCOVERY=true electron-builder --mac dmg --arm64",
+    "make:mac:intel": "npm run remove-builds && ng build --configuration=production && env -u APPLE_ID -u APPLE_APP_SPECIFIC_PASSWORD -u APPLE_TEAM_ID CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac dmg --x64",
+    "make:mac:intel:signed": "npm run preflight:mac:signed && npm run test:ci && npm run remove-builds && ng build --configuration=production && CSC_IDENTITY_AUTO_DISCOVERY=true electron-builder --mac dmg --x64",
+    "make:mac:universal:signed": "npm run preflight:mac:signed && npm run test:ci && npm run remove-builds && ng build --configuration=production && CSC_IDENTITY_AUTO_DISCOVERY=true electron-builder --mac dmg --universal",
     "dist": "build",
     "deploy": "rm -rf release && ng build && electron-builder  --universal",
     "deploy:gh-pages": "ng build && npx angular-cli-ghpages --dir=dist/video-notes",
@@ -72,8 +96,8 @@
     "@angular/platform-browser-dynamic": "^16.2.0",
     "@angular/router": "^16.2.0",
     "@videogular/ngx-videogular": "^8.0.0",
-    "axios": "^1.7.9",
     "idb-keyval": "^6.2.1",
+    "jspdf": "^4.2.0",
     "ngx-file-drop": "^16.0.0",
     "ngx-pagination": "^6.0.3",
     "rxjs": "~7.8.0",
@@ -86,12 +110,16 @@
     "@angular/compiler-cli": "^16.2.0",
     "@electron-forge/cli": "^7.6.0",
     "@electron-forge/maker-deb": "^7.6.0",
+    "@electron-forge/maker-dmg": "^7.11.1",
     "@electron-forge/maker-rpm": "^7.6.0",
+    "@electron-forge/maker-squirrel": "^7.11.1",
+    "@electron-forge/maker-zip": "^7.11.1",
     "@electron-forge/plugin-auto-unpack-natives": "^7.6.0",
     "@electron/osx-sign": "^1.0.5",
     "@types/core-js": "^2.5.6",
     "@types/jasmine": "~4.3.0",
     "electron": "^33.2.1",
+    "electron-builder": "^26.8.1",
     "electron-forge": "^5.2.4",
     "electron-installer-dmg": "^4.0.0",
     "electron-packager": "^17.1.2",

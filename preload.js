@@ -1,5 +1,5 @@
 const { exec } = require("child_process");
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webUtils } = require('electron');
 const fs = require('fs');
 const path = require('path');
 
@@ -16,7 +16,17 @@ contextBridge.exposeInMainWorld('electron', {
     invoke: (...args) => ipcRenderer.invoke(...args),
     on: (...args) => ipcRenderer.on(...args),
     send: (...args) => ipcRenderer.send(...args),
-},
+  },
+  webUtils: {
+    getPathForFile: (file) => {
+      try {
+        return webUtils.getPathForFile(file);
+      } catch (error) {
+        console.warn('preload getPathForFile failed', error);
+        return '';
+      }
+    },
+  },
 });
 
 
@@ -39,3 +49,22 @@ contextBridge.exposeInMainWorld('premiumAPI', {
     }
   },
 });
+
+contextBridge.exposeInMainWorld('fileAPI', {
+  showSaveDialog: async (options) => {
+    return ipcRenderer.invoke('save-file-dialog', options);
+  },
+  writeFile: async (payload) => {
+    return ipcRenderer.invoke('write-file', payload);
+  },
+});
+
+// URL transcript parsing intentionally disabled for legal/compliance reasons.
+// contextBridge.exposeInMainWorld('transcriptAPI', {
+//   fetchLocalUrlTranscript: async (url) => {
+//     return ipcRenderer.invoke('fetch-local-url-transcript', url);
+//   },
+//   checkLocalTranscribeReadiness: async () => {
+//     return ipcRenderer.invoke('check-local-transcribe-readiness');
+//   }
+// });

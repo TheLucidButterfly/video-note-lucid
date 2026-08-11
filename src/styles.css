@@ -3,3 +3,32 @@
 
 html, body { height: 100%; }
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+/* Force all a elements inside pagination to be white (annoying) */
+app-text-area pagination-controls pagination-template nav ul.ngx-pagination li a,
+app-text-area pagination-controls pagination-template nav ul.ngx-pagination li a:visited,
+app-text-area pagination-controls pagination-template nav ul.ngx-pagination li a:hover,
+app-text-area pagination-controls pagination-template nav ul.ngx-pagination li a:focus,
+app-text-area pagination-controls pagination-template nav ul.ngx-pagination li a:active,
+app-text-area pagination-controls pagination-template nav ul.ngx-pagination li a span,
+app-text-area pagination-controls pagination-template nav ul.ngx-pagination li.pagination-next > a,
+app-text-area pagination-controls pagination-template nav ul.ngx-pagination li.pagination-previous > a,
+app-text-area pagination-controls pagination-template nav ul.ngx-pagination li.pagination-next > a::after,
+app-text-area pagination-controls pagination-template nav ul.ngx-pagination li.pagination-previous > a::before {
+	color: white !important;
+}
+
+/* Force all li elements inside pagination to not have background on hover/focus */
+.ngx-pagination li:hover,
+.ngx-pagination li:focus,
+.ngx-pagination li:focus-within,
+.ngx-pagination a:hover,
+.ngx-pagination a:focus,
+.ngx-pagination a:active,
+.ngx-pagination button:hover,
+.ngx-pagination button:focus,
+.ngx-pagination button:active,
+.ngx-pagination .disabled:hover {
+	background: transparent !important;
+	background-color: transparent !important;
+}

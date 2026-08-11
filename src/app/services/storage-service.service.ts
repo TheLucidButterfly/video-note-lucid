@@ -16,6 +16,8 @@ import { Note, PathNotes } from '../interfaces/video-paths.interface';
 })
 export class StorageService {
 
+  private readonly fallbackStoragePrefix = 'videonotes_fallback_';
+
   constructor(
     private utilityService: UtilityService,
     private loadingService: LoadingNotificationService) {
@@ -23,7 +25,7 @@ export class StorageService {
   }
 
   public getVideos(): Observable<PathNotes[]> {
-    return from(get('videoPaths').then((savedVideos: any) => {
+    return from(this.safeGet('videoPaths').then((savedVideos: any) => {
       if (savedVideos) {
         return JSON.parse(savedVideos)
       }
@@ -40,9 +42,8 @@ export class StorageService {
    * 
    */
   public getVideoPaths(): Observable<any[]> {
-    return from(get('videoPaths').then((savedVideoPaths: any) => {
+    return from(this.safeGet('videoPaths').then((savedVideoPaths: any) => {
       if (savedVideoPaths) {
-        console.log('found paths and returning:',savedVideoPaths)
         return JSON.parse(savedVideoPaths)
       }
       else {
@@ -60,11 +61,20 @@ export class StorageService {
    * @Compatability Browser & Electron
   */
   public getUserData() {
-    return from(get('userData').then(userData => JSON.parse(userData)))
+    return from(this.safeGet('userData').then(userData => userData ? JSON.parse(userData) : {}))
   }
 
   public getSavedPaths() {
-    return from(get('videoPaths').then(paths => {return paths ? JSON.parse(paths) :  undefined}))
+    return from(this.safeGet('videoPaths').then(paths => {return paths ? JSON.parse(paths) :  undefined}))
+  }
+
+  public getAppSettings() {
+    return from(this.safeGet('appSettings').then(settings => settings ? JSON.parse(settings) : {}));
+  }
+
+  public saveAppSettings(settings: any) {
+    const normalizedSettings = settings && typeof settings === 'object' ? settings : {};
+    return from(this.safeSet('appSettings', JSON.stringify(normalizedSettings)).then(() => normalizedSettings));
   }
 
   /**
@@ -72,8 +82,8 @@ export class StorageService {
    * @Compatability Browser & Electron
    */
   public clearAllVideos() {
-    set('videos', '[]')
-    set('userData', '{}')
+    this.safeSet('videos', '[]')
+    this.safeSet('userData', '{}')
   }
 
   /**
@@ -81,8 +91,8 @@ export class StorageService {
    * @Compatability Electron only
    */
   public clearAllVideoPaths() {
-    set('videoPaths', '[]') // set('videoPaths', JSON.stringify(SavedPathsMock))
-    set('userData', '{}')
+    this.safeSet('videoPaths', '[]') // set('videoPaths', JSON.stringify(SavedPathsMock))
+    this.safeSet('userData', '{}')
   }
 
   /**
@@ -93,7 +103,7 @@ export class StorageService {
    */
   private saveExtractedVideos(extractedVideoArray: SavedVideo[]): Observable<any> {
     // this.clearAllVideos()
-    return from(get('videos')
+    return from(this.safeGet('videos')
       .then((savedVideos: any) => {
         // TODO: clean this up
         if (!savedVideos) {
@@ -106,7 +116,7 @@ export class StorageService {
         }
         let tempList: SavedVideo[] = new Array()
         tempList = savedVideos.concat(extractedVideoArray)
-        return set('videos', JSON.stringify(tempList))
+        return this.safeSet('videos', JSON.stringify(tempList))
           .then(() => {
             return tempList
           })
@@ -121,7 +131,7 @@ export class StorageService {
    * @returns Observable<any>
    */
   saveExtractedVideoPaths(extractedVideoPathArray: SavedVideo[]): Observable<any> {
-    return from(get('videoPaths')
+    return from(this.safeGet('videoPaths')
       .then((savedVideoPaths: any) => {
         // TODO: clean this up
         if (!savedVideoPaths) {
@@ -135,7 +145,7 @@ export class StorageService {
         let tempList: SavedVideo[] = new Array()
         tempList = savedVideoPaths.concat(extractedVideoPathArray);
 
-        return set('videoPaths', JSON.stringify(tempList))
+        return this.safeSet('videoPaths', JSON.stringify(tempList))
           .then(() => {
             return tempList;
           })
@@ -145,24 +155,37 @@ export class StorageService {
 
 
   deleteVideoPathAtIndex(index: number){
-    return from(get('videoPaths')
+    return from(this.safeGet('videoPaths')
       .then((savedVideoPaths: any) => {
-        let mutatedArrayStringified = JSON.parse(savedVideoPaths).length > 1 ? JSON.stringify(JSON.parse(savedVideoPaths).splice(index, 1)) : JSON.stringify([]);
-        return set('videoPaths', mutatedArrayStringified)
-          .then((savedList) => {
+        const parsedPaths = savedVideoPaths ? JSON.parse(savedVideoPaths) : [];
+
+        if (!Array.isArray(parsedPaths) || index < 0 || index >= parsedPaths.length) {
+          return parsedPaths;
+        }
+
+        const updatedPaths = [...parsedPaths];
+        updatedPaths.splice(index, 1);
+
+        return this.safeSet('videoPaths', JSON.stringify(updatedPaths))
+          .then(() => {
             this.loadingService.hide();
-            return savedList;
+            return updatedPaths;
           })
       }
       ))
   }
 
-  saveNotesToVideoObject(index: number, notesArray: TimeSignatureObject[]) {
-    this.loadingService.show('Saving');
+  saveNotesToVideoObject(index: number, notesArray: TimeSignatureObject[], showLoading = true) {
+    if (showLoading) {
+      this.loadingService.show('Saving');
+    }
+
     this.getVideos().subscribe((videos: PathNotes[]) => {
       videos[index].notes = notesArray;
       this.updateVideoObject(videos).subscribe(() => {
-        this.loadingService.hide();
+        if (showLoading) {
+          this.loadingService.hide();
+        }
       });
     })
   }
@@ -175,11 +198,17 @@ export class StorageService {
   }
 
   private updateVideoObject(videos: PathNotes[]) {
-    return from(set('videoPaths', JSON.stringify(videos))
+    return from(this.safeSet('videoPaths', JSON.stringify(videos))
       .then(() => {
         // setting completed
         return of(videos)
       }))
+  }
+
+  // DEV_ONLY: This method is intended for development purposes to replace the entire video paths array with a new one. Use with caution. 
+  replaceVideoPaths(paths: PathNotes[]) {
+    const normalized = Array.isArray(paths) ? paths : [];
+    return from(this.safeSet('videoPaths', JSON.stringify(normalized)).then(() => normalized));
   }
 
   saveUploadedVideo(videoList: NgxFileDropEntry[]): Observable<any[]> {
@@ -209,9 +238,48 @@ export class StorageService {
     let memoryBytesToAdd = userFileSizes.reduce((accumulator, file) => accumulator + file.size, 0);
     this.getUserData().subscribe(
       (userData: UserData) => {
-        set('userData', JSON.stringify({ videoLengthUsed: (userData.videoLengthUsed | 0) + (userFileSizes.length + 0), videoStorageUsed: (userData.videoStorageUsed | 0) + (memoryBytesToAdd | 0) }))
+        this.safeSet('userData', JSON.stringify({ videoLengthUsed: (userData.videoLengthUsed | 0) + (userFileSizes.length + 0), videoStorageUsed: (userData.videoStorageUsed | 0) + (memoryBytesToAdd | 0) }))
       }
     )
+  }
+
+  private getFallbackStorageKey(key: string): string {
+    return `${this.fallbackStoragePrefix}${key}`;
+  }
+
+  private useFallbackStorage(error: any): boolean {
+    const errorMessage = String(error?.message || error || '');
+    return errorMessage.toLowerCase().includes('internal error opening backing store');
+  }
+
+  private async safeGet(key: string): Promise<any> {
+    const fallbackValue = localStorage.getItem(this.getFallbackStorageKey(key));
+
+    try {
+      const idbValue = await get(key);
+      if (idbValue === null || typeof idbValue === 'undefined') {
+        return fallbackValue;
+      }
+      return idbValue;
+    } catch (error) {
+      if (this.useFallbackStorage(error)) {
+        return fallbackValue;
+      }
+      throw error;
+    }
+  }
+
+  private async safeSet(key: string, value: string): Promise<void> {
+    localStorage.setItem(this.getFallbackStorageKey(key), value);
+
+    try {
+      await set(key, value);
+    } catch (error) {
+      if (this.useFallbackStorage(error)) {
+        return;
+      }
+      throw error;
+    }
   }
 
   // saveUserData_Paths(userFileSizes: any[]){

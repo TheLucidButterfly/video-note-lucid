@@ -1,0 +1,59 @@
+.uploaderContainer {
+  min-height: 100%;
+  background-color: rgb(30, 79, 98);
+  padding: 20px;
+}
+
+.info-title {
+  color: white;
+  margin-top: 0;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+}
+
+.info-card {
+  background-color: rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.info-label {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 14px;
+}
+
+.info-value {
+  color: white;
+  font-size: 28px;
+  font-weight: 600;
+}
+
+.support-card {
+  margin-top: 18px;
+  background-color: rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 14px;
+  color: white;
+}
+
+.support-card h3 {
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+
+.support-card a {
+  color: #d6eef8;
+}
+
+.company-name {
+  margin-bottom: 0;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}

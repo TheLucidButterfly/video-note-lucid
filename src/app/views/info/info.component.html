@@ -1,0 +1,75 @@
+<div class="uploaderContainer">
+  <h2 class="info-title">Info</h2>
+  <div class="info-grid">
+    <div class="info-card">
+      <span class="info-label">Saved Files</span>
+      <span class="info-value">{{ savedFileCount }}</span>
+    </div>
+    <div class="info-card">
+      <span class="info-label">Saved Notes</span>
+      <span class="info-value">{{ savedNoteCount }}</span>
+    </div>
+    <ng-container *ngIf="extendedMetricsDeveloped">
+      <div class="info-card">
+        <span class="info-label">Uploads Tracked</span>
+        <span class="info-value">{{ userData?.videoLengthUsed || 0 }}</span>
+      </div>
+      <div class="info-card">
+        <span class="info-label">Storage Used (bytes)</span>
+        <span class="info-value">{{ userData?.videoStorageUsed || 0 }}</span>
+      </div>
+    </ng-container>
+  </div>
+
+  <div class="support-card">
+    <h3>Support</h3>
+    <p>Issues or questions? Send an email to <a href="mailto:LucidButterflyManifestation@gmail.com">LucidButterflyManifestation@gmail.com</a>.</p>
+    <p>If you have any issue whatsoever, email me and I will do my best to rectify it. Customer satisfaction is a top priority to me.</p>
+    <p class="company-name">Lucid Butterfly LLC</p>
+  </div>
+</div>
+
+<!--
+Legacy uploader UI kept for reference:
+
+<button (click)="selectVideo()">Select Video File</button>
+
+<div *ngFor="let file of uploadedFileNames; let i = index">
+  <span class="uploadedFileText">file {{ i + 1 }} - {{ file }}</span>
+  <br>
+</div>
+-->
+
+<!-- OLD IDEAS -->
+<!-- <div class="uploader-info-header">
+  Currently have: {{userData?.videoLengthUsed}}/{{fileLengthLimit}} files saved.<br>
+  Currently have: {{userData?.videoStorageUsed}}/{{byteLimit}} storage saved.<br>
+  <br>
+  Total upload byte size: {{totalPendingBytes}} <br>
+  Total Uploaded file count: {{pendingFilesMetadata.length}}<br>
+  <br>
+</div> -->
+<!-- <button (click)="selectVideo()">Select Video File</button> -->
+<!-- <div class="center uploaderContainer">
+  <ngx-file-drop style="margin-bottom: 10px;" [disabled]="!roomForVideos" dropZoneLabel="Drop it!" (onFileDrop)="dropped($event)"
+    (onFileOver)="fileOver($event)" (onFileLeave)="fileLeave($event)">
+  </ngx-file-drop>
+  <div class="pending-files-conatainer">
+
+    <div *ngFor="let video of pendingFiles; let i=index">
+      <div class="uploadFile">
+        <span class="file-header">Title:{{video?.relativePath}} <span (click)="removeVideFromPending(i)">Remove</span></span>
+        <br>
+        <span>Size: {{pendingFilesMetadata[i]?.size}}</span>
+        <br>
+        <span>Type: {{pendingFilesMetadata[i]?.type}}</span>
+        <br>
+        <br>
+      </div>
+    </div>
+  </div>
+  <div *ngIf="pendingFiles.length" (click)="savePendingFiles()" class="save-pending-uploads-button button">SAVE</div>
+</div> -->
+
+<!-- {{pendingFileSizes | json}} -->
+<!-- pendingFiles{{pendingFiles.length}} -->
