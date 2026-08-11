@@ -60,7 +60,10 @@
   </div>
   <div class="home-toolbar">
     <button class="add-video-button clickable" (click)="openUploader()">+ Add Video</button>
-    <button class="info-link-button clickable" (click)="navigateToInfoPage()">Info & Support</button>
+    <div class="home-toolbar-actions">
+      <button *ngIf="settingsPageEnabled" class="info-link-button clickable" (click)="navigateToSettingsPage()">Settings</button>
+      <button class="info-link-button clickable" (click)="navigateToInfoPage()">Info & Support</button>
+    </div>
   </div>
   <div *ngIf="loading" class="home-loading-hint">Loading video references...</div>
   <div *ngIf="!loading && (!storedPaths || storedPaths.length === 0)" class="home-loading-hint">No saved videos yet. Click + to add one.</div>

@@ -6,6 +6,7 @@ export enum uploadModes {
 export const environment = {
     production: true,
     appTitle: 'Vide-note (Trial)',
+    enableSettingsPage: false,
     uploadMode: uploadModes.pathed,
     allowUrlInput: false,
     fullLimits: {
@@ -14,7 +15,7 @@ export const environment = {
     trialMode: true,
     trialLimits: {
         maxVideos: 2,
-        maxNotesPerVideo: 5,
+        maxNotesPerVideo: 30,
     },
     devFlagNoteInjectorStressTest: {
         enabled: false,

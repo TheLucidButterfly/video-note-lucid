@@ -5,6 +5,7 @@ import { LoadingNotificationService } from 'src/app/services/loading-notificatio
 import { Observable } from 'rxjs';
 import { CentralService } from 'src/app/services/central.service';
 import { VideoUploadService } from 'src/app/services/video-upload.service';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-home-view',
@@ -14,6 +15,7 @@ import { VideoUploadService } from 'src/app/services/video-upload.service';
 export class HomeViewComponent {
   readonly videosPerPage = 24;
   private homeDragDepth = 0;
+  readonly settingsPageEnabled = environment.enableSettingsPage;
 
   // URL import intentionally disabled for legal/compliance reasons.
   // readonly allowUrlInput = environment.allowUrlInput;
@@ -109,6 +111,10 @@ export class HomeViewComponent {
 
   navigateToInfoPage() {
     this.router.navigate(['info']);
+  }
+
+  navigateToSettingsPage() {
+    this.router.navigate(['settings']);
   }
 
   async openUploader() {

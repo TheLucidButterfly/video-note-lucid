@@ -6,6 +6,7 @@ export enum uploadModes {
 export const environment = {
     production: false,
     appTitle: 'My Angular App (Development)',
+    enableSettingsPage: false,
     uploadMode: uploadModes.pathed,
     allowUrlInput: false,
     fullLimits: {

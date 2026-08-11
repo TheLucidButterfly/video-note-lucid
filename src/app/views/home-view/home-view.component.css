@@ -58,6 +58,12 @@
   gap: 10px;
 }
 
+.home-toolbar-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .home-loading-hint {
   color: rgba(255, 255, 255, 0.9);
   text-align: center;

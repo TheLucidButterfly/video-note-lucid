@@ -68,6 +68,15 @@ export class StorageService {
     return from(this.safeGet('videoPaths').then(paths => {return paths ? JSON.parse(paths) :  undefined}))
   }
 
+  public getAppSettings() {
+    return from(this.safeGet('appSettings').then(settings => settings ? JSON.parse(settings) : {}));
+  }
+
+  public saveAppSettings(settings: any) {
+    const normalizedSettings = settings && typeof settings === 'object' ? settings : {};
+    return from(this.safeSet('appSettings', JSON.stringify(normalizedSettings)).then(() => normalizedSettings));
+  }
+
   /**
    * Set the localstorage initial values for saved-video method
    * @Compatability Browser & Electron

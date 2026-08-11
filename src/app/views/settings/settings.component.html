@@ -1,0 +1,40 @@
+<div class="settings-page">
+  <div class="settings-card">
+    <h2>Settings</h2>
+    <p class="settings-subtitle">Edition 1 settings are local-only and saved on this device.</p>
+
+    <div *ngIf="loading" class="settings-loading">Loading settings...</div>
+
+    <div *ngIf="!loading" class="settings-form">
+      <label for="apiKey">API Key (for Edition 2 AI features)</label>
+      <input
+        id="apiKey"
+        type="password"
+        [(ngModel)]="settings.apiKey"
+        placeholder="Paste your API key here" />
+
+      <label for="providerNotes">Instructions / Notes</label>
+      <textarea
+        id="providerNotes"
+        [(ngModel)]="settings.providerNotes"
+        placeholder="Example: provider name, model, where to generate keys, billing notes"></textarea>
+
+      <div class="settings-help">
+        <h3>How this will be used</h3>
+        <p>In this edition, values are stored locally only.</p>
+        <p>In Edition 2, these settings will power AI Summary and AI Chat.</p>
+      </div>
+
+      <div class="settings-actions">
+        <button class="save-button" (click)="saveSettings()">Save Settings</button>
+        <button class="back-button" (click)="navigateHome()">Back to Home</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<app-toast
+  [isVisible]="showSavedToast"
+  [message]="'Settings saved'"
+  [durationMs]="2400"
+  (dismissed)="hideSavedToast()"></app-toast>

@@ -1,0 +1,120 @@
+@import '../../../variables.scss';
+
+.settings-page {
+  min-height: 100%;
+  width: 100%;
+  padding: 24px;
+  background: radial-gradient(circle at 18% 10%, rgba(46, 110, 148, 0.35), rgba(7, 14, 20, 0.95) 46%), var(--global-background);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.settings-card {
+  width: min(760px, 100%);
+  margin-top: 18px;
+  padding: 22px;
+  border-radius: 16px;
+  background: rgba(13, 24, 34, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #f4f8fb;
+  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.32);
+}
+
+.settings-card h2 {
+  margin: 0;
+  font-size: 30px;
+  letter-spacing: 0.3px;
+}
+
+.settings-subtitle {
+  margin-top: 8px;
+  margin-bottom: 18px;
+  opacity: 0.86;
+}
+
+.settings-loading {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.settings-form {
+  display: grid;
+  gap: 10px;
+}
+
+.settings-form label {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.settings-form input,
+.settings-form textarea {
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #f4f8fb;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.settings-form textarea {
+  min-height: 108px;
+  resize: vertical;
+}
+
+.settings-help {
+  margin-top: 8px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.settings-help h3 {
+  margin: 0 0 6px;
+  font-size: 15px;
+}
+
+.settings-help p {
+  margin: 4px 0;
+  font-size: 13px;
+  opacity: 0.92;
+}
+
+.settings-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.save-button,
+.back-button {
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.save-button {
+  background: linear-gradient(120deg, #2492d3, #2bbb76);
+  color: white;
+}
+
+.back-button {
+  background: #d6eef8;
+  color: #113d54;
+}
+
+@media (max-width: 700px) {
+  .settings-page {
+    padding: 14px;
+  }
+
+  .settings-card {
+    margin-top: 6px;
+    padding: 16px;
+  }
+}

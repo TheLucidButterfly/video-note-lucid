@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
+import { HttpClientModule } from '@angular/common/http';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -22,6 +23,7 @@ import { DeveloperToolsComponent } from './views/developer-tools/developer-tools
 import { FileNameFromPathPipe } from './pipes/file-name-from-path.pipe';
 import { DialogComponent } from './plugins/dialog/dialog.component'; // <-- import the module
 import { ToastComponent } from './plugins/toast/toast.component';
+import { SettingsComponent } from './views/settings/settings.component';
 // import { VideoTextViewComponent } from './views/video-text-view/video-text-view.component';
 
 
@@ -38,10 +40,12 @@ import { ToastComponent } from './plugins/toast/toast.component';
     DeveloperToolsComponent,
     FileNameFromPathPipe,
     DialogComponent,
-    ToastComponent
+    ToastComponent,
+    SettingsComponent
   ],
   imports: [
     BrowserModule,
+    HttpClientModule,
     AppRoutingModule,
     NgxFileDropModule,
     VgCoreModule,

@@ -41,7 +41,7 @@ Trial settings are centralized in `src/environments/environment.trial.ts`.
 Recommended trial limits:
 
 - `maxVideos: 2`
-- `maxNotesPerVideo: 5`
+- `maxNotesPerVideo: 30`
 
 These limits are enforced in app logic:
 
@@ -123,13 +123,13 @@ These rules define how transcript import/parsing should behave so output stays r
 
 ## TODO
 
-- Improve keyboard shortcuts:
-  - Shift + Left/Right Arrow should seek by 15-second intervals.
-  - Left/Right Arrow behavior should still allow text cursor movement while typing in notes.
-  - Add a shortcut to go back to the previous screen.
 - Settings page.
 - More video details on the Info page.
 - Mass delete selection option.
+- Nice-to-have (later): Improve keyboard shortcuts:
+  - Shift + Left/Right Arrow should seek by 15-second intervals.
+  - Left/Right Arrow behavior should still allow text cursor movement while typing in notes.
+  - Add a shortcut to go back to the previous screen.
 
 ## Build-Time Note Transform Replacement
 

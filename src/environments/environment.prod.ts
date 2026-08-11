@@ -6,6 +6,7 @@ export enum uploadModes {
 export const environment = {
     production: true,
     appTitle: 'Vide-note',
+    enableSettingsPage: false,
     uploadMode: uploadModes.pathed,
     allowUrlInput: false,
     fullLimits: {

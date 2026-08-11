@@ -10,7 +10,7 @@
         <span class="title-hint">Hover for full path</span>
       </div>
    </div>
-    <div *ngIf="environment.trialMode" class="trial-badge">
+    <div *ngIf="environment.trialMode && !centralService.isPremium" class="trial-badge">
       Trial Mode
     </div>
   </div>
