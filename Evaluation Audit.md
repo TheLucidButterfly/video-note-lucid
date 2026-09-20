@@ -1,10 +1,12 @@
 # Evaluation Audit
-_April 5, 2026 — updated after LOW fixes_
+_September 17, 2026 — current status_
 
-## Overall Grade: A-
+## Overall Status: Functional beta; not ready for public commercial launch
 
-The app is functionally solid, well-optimized, and production-ready for distribution.
-One medium-severity architectural issue remains (documented below, deferred by choice).
+The app builds and packages, and the current automated suite passes. Core video, notes,
+pagination, persistence, export, and trial-limit paths are present. Public launch still
+requires completing and validating the paid entitlement service, confirming the release
+UX, and addressing the deferred reliability and coverage items below.
 
 ---
 
@@ -12,12 +14,12 @@ One medium-severity architectural issue remains (documented below, deferred by c
 
 | Area | Detail |
 |---|---|
-| Bundle size | 388kb initial load, well under 500kb budget. jsPDF lazy-loaded (~402kb) only on PDF export |
-| Security | No sensitive data (file paths, notes, activation keys) in console logs |
-| Code signing | Preflight script guards all `*:signed` builds; notarization passing |
+| Bundle size | The September 17 trial build was 436.69 kB initial load, below the 500 kB budget. jsPDF remains lazy-loaded for PDF export |
+| Security | Release builds hide developer tools. The Electron development renderer still reports an insecure CSP warning; verify the packaged renderer policy before release |
+| Code signing | Preflight script guards all `*:signed` builds; signing and notarization still require release-environment validation |
 | Unsaved changes guard | Intercepts Home button, per-note dirty tracking via `Set<string>`, only fires on real input events |
 | Dialog component | General-purpose (`app-dialog`), reusable across limit/activate/confirm/unsaved flows |
-| Tests | 35/35 passing; covers pipes, services, component logic, and navigation guard |
+| Tests | 35/35 passing in ChromeHeadless; persistence, Home delete flow, and AppComponent save/discard paths remain untested |
 | Build pipeline | Signed builds run `preflight → test:ci → build → package` in order |
 | Dev tools panel | Hidden in production builds via `environment.production`; visible in dev/`start:electron` |
 | Template type safety | All strict-mode template type errors resolved |
@@ -26,6 +28,19 @@ One medium-severity architectural issue remains (documented below, deferred by c
 ---
 
 ## Issues
+
+### HIGH — Paid launch readiness
+
+**Entitlement service is not configured for production**
+- `checkoutUrl` and `entitlementApiBaseUrl` are empty in the environment files.
+- A trial build can report `premium: true` when a saved paid entitlement exists, even when
+	the entitlement API is not configured. This is expected by the current code, but it must
+	be explicitly tested and documented before selling the app.
+
+**Product features remain incomplete**
+- AI Summary and AI Chat are not implemented.
+- Settings and some Info-page functionality remain unfinished.
+- End-to-end coverage is not present.
 
 ### MEDIUM — Code correctness / reliability (deferred)
 

@@ -4,11 +4,12 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { VideoComponent } from './video.component';
 import { StorageService } from 'src/app/services/storage-service.service';
 import { LoadingNotificationService } from 'src/app/services/loading-notification/loading-notification.service';
+import { EntitlementService } from 'src/app/services/entitlement.service';
 import { of } from 'rxjs';
 
 describe('VideoComponent', () => {
   let component: VideoComponent;
-  let fixture: ComponentFixture<VideoComponent>;
+  let fixture!: ComponentFixture<VideoComponent>;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -16,7 +17,8 @@ describe('VideoComponent', () => {
       declarations: [VideoComponent],
       providers: [
         { provide: StorageService, useValue: { getVideos: () => of([]), saveNotesToVideoObject: () => {} } },
-        { provide: LoadingNotificationService, useValue: { show: () => {}, hide: () => {}, loading$: of(false) } }
+        { provide: LoadingNotificationService, useValue: { show: () => {}, hide: () => {}, loading$: of(false) } },
+        { provide: EntitlementService, useValue: { getNotesPerVideoLimit: () => Number.MAX_SAFE_INTEGER, isTrialRestricted: () => false } }
       ],
       schemas: [NO_ERRORS_SCHEMA]
     });

@@ -16,7 +16,7 @@ describe('TimeSignatureComponent', () => {
       imports: [RouterTestingModule],
       declarations: [TimeSignatureComponent],
       providers: [
-        VideoComponent,
+        { provide: VideoComponent, useValue: {} },
         { provide: StorageService, useValue: { getVideos: () => of([]), saveNotesToVideoObject: () => {} } },
         { provide: LoadingNotificationService, useValue: { show: () => {}, hide: () => {}, loading$: of(false) } }
       ],

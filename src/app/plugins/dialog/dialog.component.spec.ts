@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { FormsModule } from '@angular/forms';
+import { EntitlementService } from 'src/app/services/entitlement.service';
 
 import { DialogComponent } from './dialog.component';
 
@@ -8,7 +10,11 @@ describe('DialogComponent', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      declarations: [DialogComponent]
+      imports: [FormsModule],
+      declarations: [DialogComponent],
+      providers: [
+        { provide: EntitlementService, useValue: { activateLicense: async () => ({ success: true, message: '' }), openCheckoutPage: () => {} } }
+      ]
     });
     fixture = TestBed.createComponent(DialogComponent);
     component = fixture.componentInstance;

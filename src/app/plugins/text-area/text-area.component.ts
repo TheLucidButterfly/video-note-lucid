@@ -8,7 +8,7 @@ import { TimeSignatureObject } from 'src/app/interfaces/time-signature-object.in
 })
 export class TextAreaComponent {
   private readonly notePreviewMaxLength = 72;
-  readonly notesPerPage = 10;
+  readonly notesPerPage = 3;
 
   @Input('selectedSignatureObject') selectedSignatureObject: any;
   @Input('notesArray') notesArray: TimeSignatureObject[] = [];

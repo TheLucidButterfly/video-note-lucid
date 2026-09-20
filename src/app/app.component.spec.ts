@@ -2,7 +2,7 @@ import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { AppComponent } from './app.component';
 import { CentralService } from './services/central.service';
-import { StorageService } from './services/storage-service.service';
+import { EntitlementService } from './services/entitlement.service';
 import { LoadingNotificationService } from './services/loading-notification/loading-notification.service';
 import { Component } from '@angular/core';
 import { of } from 'rxjs';
@@ -18,7 +18,7 @@ describe('AppComponent', () => {
   let app: AppComponent;
   let centralService: CentralService;
 
-  const storageServiceStub = { loadPremiumStatus: () => of(true) };
+  const entitlementServiceStub = { bootstrapAuthorization: () => Promise.resolve(true) };
   const loadingServiceStub = { show: () => {}, hide: () => {}, loading$: of(false) };
 
   beforeEach(() => {
@@ -26,7 +26,7 @@ describe('AppComponent', () => {
       imports: [RouterTestingModule],
       declarations: [AppComponent, MockSpinnerComponent, MockDialogComponent],
       providers: [
-        { provide: StorageService, useValue: storageServiceStub },
+        { provide: EntitlementService, useValue: entitlementServiceStub },
         { provide: LoadingNotificationService, useValue: loadingServiceStub }
       ]
     });

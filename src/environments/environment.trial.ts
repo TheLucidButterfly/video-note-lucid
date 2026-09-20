@@ -17,6 +17,12 @@ export const environment = {
         maxVideos: 2,
         maxNotesPerVideo: 30,
     },
+    payment: {
+        checkoutUrl: 'https://buy.stripe.com/test_14A14p3w2e8IdDm5my8Ra00',
+        entitlementApiBaseUrl: '',
+        revalidateIntervalDays: 7,
+        offlineGraceDays: 30,
+    },
     devFlagNoteInjectorStressTest: {
         enabled: false,
         mockNotesTargetCount: 120,

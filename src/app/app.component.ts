@@ -1,9 +1,9 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { CentralService } from './services/central.service';
-import { StorageService } from './services/storage-service.service';
 import { LoadingNotificationService } from './services/loading-notification/loading-notification.service';
 import { environment } from 'src/environments/environment';
+import { EntitlementService } from './services/entitlement.service';
 
 
 @Component({
@@ -20,23 +20,19 @@ export class AppComponent {
   constructor(
     private router: Router,
     public centralService: CentralService,
-    private storageService: StorageService,
+    private entitlementService: EntitlementService,
     public LoadingService: LoadingNotificationService
   ) { }
 
   ngOnInit(): void { 
     this.LoadingService.show();
-    this.storageService.loadPremiumStatus().subscribe({
-      next: (isPremiumStatus: boolean) => {
-        this.centralService.isPremium = isPremiumStatus;
-      },
-      error: (error) => {
-        console.error('loadPremiumStatus failed', error);
-      },
-      complete: () => {
+    this.entitlementService.bootstrapAuthorization()
+      .catch((error) => {
+        console.error('bootstrapAuthorization failed', error);
+      })
+      .finally(() => {
         this.LoadingService.hide();
-      }
-    });
+      });
 
     this.isHomePage = this.router.url === '/home';
     this.router.events.subscribe(() => {

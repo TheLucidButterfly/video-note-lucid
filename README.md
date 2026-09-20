@@ -38,6 +38,12 @@ npm run make:mac:m-series:trial:signed
 
 Trial settings are centralized in `src/environments/environment.trial.ts`.
 
+To run the trial Electron build with DevTools open:
+
+```bash
+npm_config_devtools=true npm run start:electron:trial
+```
+
 Recommended trial limits:
 
 - `maxVideos: 2`
@@ -48,13 +54,64 @@ These limits are enforced in app logic:
 - Upload flow caps total saved videos.
 - Annotation flow caps notes per video.
 
-### Available Flags
+Trial mode can still show premium access when the local app data contains a valid saved
+paid entitlement. To test the actual trial restrictions, use a clean application data
+directory or remove the saved entitlement first. Startup diagnostics are printed in the
+Electron DevTools console without logging the license token.
+
+### Build Configurations
 
 | Flag | What it does | Default |
 | --- | --- | --- |
-| `signed` | Enables signing/notarization for release scripts ending in `:signed`. | `false` (unsigned) |
-| `trial` | Uses `environment.trial.ts` and applies trial restrictions. | `false` (full mode) |
-| `prod` (production) | Uses `environment.prod.ts`, enables production mode, and keeps developer tools hidden by default. | `false` in dev runs |
+| `development` | Full local build with source maps and developer tools available. Used by `start:electron`. | Default for local Electron |
+| `trial` | Uses `environment.trial.ts` and applies trial restrictions unless a valid saved paid entitlement is present. | Explicit configuration |
+| `production` | Uses `environment.prod.ts`, enables production optimizations, and excludes the note stress transform. | Default for `ng build` |
+
+Scripts ending in `:signed` run the signing preflight and require valid Apple signing and
+notarization credentials. Unsigned scripts intentionally disable automatic signing.
+
+### Checkout Flow
+
+The intended customer flow is:
+
+```text
+Trial app -> Buy -> Stripe Payment Link -> successful payment -> Stripe success URL
+     -> customer download page for the full version
+```
+
+The trial build currently uses this Stripe test Payment Link:
+
+```text
+https://buy.stripe.com/test_14A14p3w2e8IdDm5my8Ra00
+```
+
+The Stripe success redirect is:
+
+```text
+https://thelucidbutterfly.github.io/Video-Note-Site/youre-special/free-access.html
+```
+
+This is the hosted GitHub Pages download/access page for customers after a successful
+Stripe payment. It is configured in Stripe under the Payment Link's **After payment**
+settings, not in the Electron application environment files.
+
+The URL is configured as `payment.checkoutUrl` in
+`src/environments/environment.trial.ts`. The production checkout URL belongs in
+`src/environments/environment.prod.ts` after the live Stripe Payment Link is ready.
+
+To view or change the success redirect in Stripe:
+
+1. Enable **Test mode** for the test link.
+2. Open **Payments -> Checkout -> Payment Links**.
+3. Open the Payment Link and choose **Edit**.
+4. Open the **After payment** section.
+5. Inspect the setting for redirecting customers to a website after payment. That is the
+  success URL used by this flow.
+
+Stripe owns the checkout and the redirect. The repository's local
+`src/assets/splash.html` is only a placeholder page; the customer-facing success page is
+the hosted GitHub Pages URL above. Payment confirmation and license activation also
+require a configured entitlement API; `payment.entitlementApiBaseUrl` is currently empty.
 
 ### Static False Flags
 
@@ -123,10 +180,13 @@ These rules define how transcript import/parsing should behave so output stays r
 
 ## TODO
 
-- Settings page.
-- More video details on the Info page.
+- Configure and validate the production checkout and entitlement API.
+- Complete the Settings page and AI Summary/AI Chat features.
+- Add more video details on the Info page.
 - Mass delete selection option.
-- Nice-to-have (later): Improve keyboard shortcuts:
+- Add end-to-end coverage for launch, trial limits, entitlement activation, persistence,
+  and export.
+- Nice-to-have: Improve keyboard shortcuts:
   - Shift + Left/Right Arrow should seek by 15-second intervals.
   - Left/Right Arrow behavior should still allow text cursor movement while typing in notes.
   - Add a shortcut to go back to the previous screen.

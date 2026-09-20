@@ -9,6 +9,7 @@ import { CentralService } from 'src/app/services/central.service';
 import { environment, uploadModes } from '../../../environments/environment';
 import { TextAreaComponent } from 'src/app/plugins/text-area/text-area.component';
 import { prepareLoadedNotes } from './note-transform';
+import { EntitlementService } from 'src/app/services/entitlement.service';
 
 
 @Component({
@@ -56,6 +57,7 @@ export class VideoComponent implements OnInit {
     private storageService: StorageService,
     private loader: LoadingNotificationService,
     public centralService: CentralService,
+    private entitlementService: EntitlementService,
     private renderer: Renderer2) { }
 
   // All subscriptions: this.api.getDefaultMedia() 
@@ -314,8 +316,9 @@ export class VideoComponent implements OnInit {
     foundSignatureObject = this.setCurrentTimeSignature(currentTime)
 
     if (!foundSignatureObject) {
-      if (environment.trialMode && this.notesArray.length >= environment.trialLimits.maxNotesPerVideo) {
-        alert(`Trial limit reached: up to ${environment.trialLimits.maxNotesPerVideo} notes per video.`);
+      const maxNotesPerVideo = this.entitlementService.getNotesPerVideoLimit();
+      if (this.entitlementService.isTrialRestricted() && this.notesArray.length >= maxNotesPerVideo) {
+        alert(`Trial limit reached: up to ${maxNotesPerVideo} notes per video.`);
         return;
       }
 

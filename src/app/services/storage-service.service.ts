@@ -176,16 +176,17 @@ export class StorageService {
   }
 
   saveNotesToVideoObject(index: number, notesArray: TimeSignatureObject[], showLoading = true) {
-    if (showLoading) {
-      this.loadingService.show('Saving');
-    }
+    // "Saving" spinner disabled: it duplicated the save toast.
+    // if (showLoading) {
+    //   this.loadingService.show('Saving');
+    // }
 
     this.getVideos().subscribe((videos: PathNotes[]) => {
       videos[index].notes = notesArray;
       this.updateVideoObject(videos).subscribe(() => {
-        if (showLoading) {
-          this.loadingService.hide();
-        }
+        // if (showLoading) {
+        //   this.loadingService.hide();
+        // }
       });
     })
   }

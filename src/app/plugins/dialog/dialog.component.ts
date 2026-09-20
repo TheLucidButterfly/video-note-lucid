@@ -1,6 +1,7 @@
 // notes-limit-dialog.component.ts
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { ActivationResponse } from 'src/app/interfaces/activation-response.interface';
+import { EntitlementService } from 'src/app/services/entitlement.service';
 
 @Component({
   selector: 'app-dialog',
@@ -24,6 +25,14 @@ export class DialogComponent {
   activationCode: string = '';
   activationError: string | null = null;
 
+  constructor(private entitlementService: EntitlementService) {}
+
+  ngOnInit() {
+    if (this.currentView === 'activateForm') {
+      this.showActivateForm = true;
+    }
+  }
+
   closeDialog() {
     this.isDialogVisible = false;
     this.dialogOpen.emit(false);
@@ -44,20 +53,21 @@ export class DialogComponent {
   }
 
   redirectToBuy() {
-    window.open('https://your-site.com/upgrade', '_blank');
+    this.entitlementService.openCheckoutPage();
   }
 
   openActivateForm() {
     this.showActivateForm = true;
   }
 
-  validateKey() {
-    (window as any).license.activateKey(this.activationCode).then((activationResponse: ActivationResponse) => {
-      if (activationResponse.success) {
-        this.closeDialog();
-      } else {
-        alert('Error validating key:'+activationResponse.message);
-      }
-    });
+  async validateKey() {
+    this.activationError = null;
+    const activationResponse: ActivationResponse = await this.entitlementService.activateLicense(this.activationCode);
+    if (activationResponse.success) {
+      this.closeDialog();
+      return;
+    }
+
+    this.activationError = activationResponse.message;
   }
 }

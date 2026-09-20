@@ -17,6 +17,12 @@ export const environment = {
         maxVideos: Number.MAX_SAFE_INTEGER,
         maxNotesPerVideo: Number.MAX_SAFE_INTEGER,
     },
+    payment: {
+        checkoutUrl: '',
+        entitlementApiBaseUrl: '',
+        revalidateIntervalDays: 7,
+        offlineGraceDays: 30,
+    },
     devFlagNoteInjectorStressTest: {
         enabled: false,
         mockNotesTargetCount: 120,

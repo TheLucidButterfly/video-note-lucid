@@ -66,11 +66,12 @@
     </div>
   </div>
   <div *ngIf="loading" class="home-loading-hint">Loading video references...</div>
-  <div *ngIf="!loading && (!storedPaths || storedPaths.length === 0)" class="home-loading-hint">No saved videos yet. Click + to add one.</div>
+  <div *ngIf="!loading && (!storedPaths || storedPaths.length === 0)" class="home-loading-hint">No saved videos yet. Click + to add one, or drag video files onto this window.</div>
   <div *ngIf="!loading && storedPaths && storedPaths.length > 0" class="home-list-header">
     <div class="home-page-summary">Video count: {{ storedPaths.length }}</div>
     <div class="home-page-meta" *ngIf="storedPaths.length > videosPerPage">Page {{ homePage }} of {{ totalHomePages }}</div>
     <pagination-controls
+      id="homeVideosPagination"
       *ngIf="storedPaths.length > videosPerPage"
       class="home-pagination"
       (pageChange)="homePage = $event"
@@ -79,10 +80,11 @@
   </div>
   <div
     class="gridDropZone"
-    [class.drag-over]="isDragOverHome">
+    [class.drag-over]="isDragOverHome"
+    [class.empty-hint]="!loading && (!storedPaths || storedPaths.length === 0)">
     <div class="drag-overlay" *ngIf="isDragOverHome">Drop video files to add them</div>
     <div class="gridContainer">
-    <div *ngFor="let path of storedPaths | paginate: { itemsPerPage: videosPerPage, currentPage: homePage }; let i = index"
+    <div *ngFor="let path of storedPaths | paginate: { id: 'homeVideosPagination', itemsPerPage: videosPerPage, currentPage: homePage }; let i = index"
       class="gridTile videoTile clickable" (click)="nagivateToUrlScreen(((homePage - 1) * videosPerPage) + i)">
       <video
         class="tileVideo"

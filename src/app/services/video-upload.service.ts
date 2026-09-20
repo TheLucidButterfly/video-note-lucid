@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { StorageService } from './storage-service.service';
-import { environment } from 'src/environments/environment';
+import { EntitlementService } from './entitlement.service';
 
 interface VideoUploadResult {
   selectedFileNames: string[];
@@ -14,7 +14,8 @@ interface VideoUploadResult {
 export class VideoUploadService {
 
   constructor(
-    private storageService: StorageService
+    private storageService: StorageService,
+    private entitlementService: EntitlementService
   ) { }
 
   /**
@@ -106,11 +107,7 @@ export class VideoUploadService {
   }
 
   private getConfiguredMaxVideos(): number {
-    if (environment.trialMode) {
-      return environment.trialLimits.maxVideos;
-    }
-
-    return environment.fullLimits.maxVideos;
+    return this.entitlementService.getVideoLimit();
   }
 
   private async getSavedVideoCount(): Promise<number> {
