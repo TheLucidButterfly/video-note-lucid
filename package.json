@@ -2,7 +2,7 @@
   "name": "video-notes",
   "main": "app.js",
   "productName": "Vide-note",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Video note-taking app built with Angular and Electron",
   "author": "Anthony Joseph Calderaio Jr.",
   "license": "MIT",
