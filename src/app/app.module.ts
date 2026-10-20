@@ -1,11 +1,12 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
+import { HttpClientModule } from '@angular/common/http';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { HomeViewComponent } from './views/home-view/home-view.component';
 import { NgxFileDropModule } from 'ngx-file-drop';
-import { UploaderComponent } from './views/uploader/uploader.component';
+import { InfoComponent } from './views/info/info.component';
 import { VideoComponent } from './views/video/video.component';
 import { VgCoreModule } from '@videogular/ngx-videogular/core';
 import { VgControlsModule } from '@videogular/ngx-videogular/controls';
@@ -20,14 +21,17 @@ import { MinutesFormatPipe } from './pipes/minutes-format.pipe';
 import { NgxPaginationModule } from 'ngx-pagination';
 import { DeveloperToolsComponent } from './views/developer-tools/developer-tools.component';
 import { FileNameFromPathPipe } from './pipes/file-name-from-path.pipe';
-import { NotesLimitDialogComponent } from './plugins/dialog/dialog.component'; // <-- import the module
+import { DialogComponent } from './plugins/dialog/dialog.component'; // <-- import the module
+import { ToastComponent } from './plugins/toast/toast.component';
+import { SettingsComponent } from './views/settings/settings.component';
+// import { VideoTextViewComponent } from './views/video-text-view/video-text-view.component';
 
 
 @NgModule({
   declarations: [
     AppComponent,
     HomeViewComponent,
-    UploaderComponent,
+    InfoComponent,
     VideoComponent,
     SpinnerComponent,
     TimeSignatureComponent,
@@ -35,10 +39,13 @@ import { NotesLimitDialogComponent } from './plugins/dialog/dialog.component'; /
     MinutesFormatPipe,
     DeveloperToolsComponent,
     FileNameFromPathPipe,
-    NotesLimitDialogComponent
+    DialogComponent,
+    ToastComponent,
+    SettingsComponent
   ],
   imports: [
     BrowserModule,
+    HttpClientModule,
     AppRoutingModule,
     NgxFileDropModule,
     VgCoreModule,

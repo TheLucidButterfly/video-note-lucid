@@ -1,0 +1,128 @@
+.uploaderContainer {
+  min-height: 100%;
+  background-color: rgb(30, 79, 98);
+  padding: 20px;
+}
+
+.info-title {
+  color: white;
+  margin-top: 0;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+}
+
+.info-card {
+  background-color: rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.info-label {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 14px;
+}
+
+.info-value {
+  color: white;
+  font-size: 28px;
+  font-weight: 600;
+}
+
+.support-card {
+  margin-top: 18px;
+  background-color: rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 14px;
+  color: white;
+}
+
+.support-card h3 {
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+
+.support-card a {
+  color: #d6eef8;
+}
+
+.company-name {
+  margin-bottom: 0;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+.wipe-all-button {
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  background: linear-gradient(120deg, #c0392b, #922b21);
+  color: white;
+  margin-top: 8px;
+}
+
+.wipe-all-button:hover {
+  filter: brightness(1.08);
+}
+
+.migration-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.migration-button {
+  border: 0;
+  border-radius: 999px;
+  padding: 9px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  background: linear-gradient(120deg, #117a65, #0e6655);
+  color: white;
+}
+
+.migration-button.secondary {
+  background: linear-gradient(120deg, #4f5d6b, #38424d);
+}
+
+.migration-button:hover {
+  filter: brightness(1.08);
+}
+
+.migration-textarea {
+  width: 100%;
+  min-height: 160px;
+  margin-top: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(9, 31, 39, 0.55);
+  color: white;
+  padding: 10px;
+  font-family: Menlo, Monaco, Consolas, 'Courier New', monospace;
+  font-size: 12px;
+  resize: vertical;
+}
+
+.migration-status {
+  color: #7ef1c0;
+  margin-bottom: 0;
+}
+
+.migration-error {
+  color: #ffd4d4;
+  margin-bottom: 0;
+}

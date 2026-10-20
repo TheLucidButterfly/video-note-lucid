@@ -16,6 +16,8 @@ import { Note, PathNotes } from '../interfaces/video-paths.interface';
 })
 export class StorageService {
 
+  private readonly fallbackStoragePrefix = 'videonotes_fallback_';
+
   constructor(
     private utilityService: UtilityService,
     private loadingService: LoadingNotificationService) {
@@ -23,7 +25,7 @@ export class StorageService {
   }
 
   public getVideos(): Observable<PathNotes[]> {
-    return from(get('videoPaths').then((savedVideos: any) => {
+    return from(this.safeGet('videoPaths').then((savedVideos: any) => {
       if (savedVideos) {
         return JSON.parse(savedVideos)
       }
@@ -40,9 +42,8 @@ export class StorageService {
    * 
    */
   public getVideoPaths(): Observable<any[]> {
-    return from(get('videoPaths').then((savedVideoPaths: any) => {
+    return from(this.safeGet('videoPaths').then((savedVideoPaths: any) => {
       if (savedVideoPaths) {
-        console.log('found paths and returning:',savedVideoPaths)
         return JSON.parse(savedVideoPaths)
       }
       else {
@@ -60,11 +61,90 @@ export class StorageService {
    * @Compatability Browser & Electron
   */
   public getUserData() {
-    return from(get('userData').then(userData => JSON.parse(userData)))
+    return from(this.safeGet('userData').then(userData => userData ? JSON.parse(userData) : {}))
   }
 
   public getSavedPaths() {
-    return from(get('videoPaths').then(paths => {return paths ? JSON.parse(paths) :  undefined}))
+    return from(this.safeGet('videoPaths').then(paths => {return paths ? JSON.parse(paths) :  undefined}))
+  }
+
+  public getAppSettings() {
+    return from(this.safeGet('appSettings').then(settings => settings ? JSON.parse(settings) : {}));
+  }
+
+  public saveAppSettings(settings: any) {
+    const normalizedSettings = settings && typeof settings === 'object' ? settings : {};
+    return from(this.safeSet('appSettings', JSON.stringify(normalizedSettings)).then(() => normalizedSettings));
+  }
+
+  public exportMigrationPayload() {
+    return from(Promise.all([
+      this.safeGet('videoPaths'),
+      this.safeGet('userData'),
+      this.safeGet('appSettings')
+    ]).then(([savedPathsRaw, userDataRaw, appSettingsRaw]) => {
+      const savedPaths = this.safeParseJson(savedPathsRaw, []);
+      const userData = this.safeParseJson(userDataRaw, {});
+      const appSettings = this.safeParseJson(appSettingsRaw, {});
+
+      const portableSettings = (appSettings && typeof appSettings === 'object')
+        ? { ...(appSettings as Record<string, any>) }
+        : {};
+      delete (portableSettings as any).entitlement;
+
+      const payload = {
+        schemaVersion: 1,
+        exportedAt: new Date().toISOString(),
+        data: {
+          videoPaths: this.normalizeImportedPaths(savedPaths),
+          userData: this.normalizeImportedUserData(userData),
+          appSettings: portableSettings
+        }
+      };
+
+      return JSON.stringify(payload, null, 2);
+    }));
+  }
+
+  public importMigrationPayload(payloadText: string) {
+    return from((async () => {
+      const parsedPayload = this.safeParseJson(payloadText, null);
+      if (!parsedPayload || typeof parsedPayload !== 'object') {
+        throw new Error('Invalid migration payload format.');
+      }
+
+      const payloadData = (parsedPayload as any).data;
+      if (!payloadData || typeof payloadData !== 'object') {
+        throw new Error('Migration payload is missing a data object.');
+      }
+
+      const normalizedVideoPaths = this.normalizeImportedPaths(payloadData.videoPaths);
+      const normalizedUserData = this.normalizeImportedUserData(payloadData.userData);
+      const importedSettings = payloadData.appSettings && typeof payloadData.appSettings === 'object'
+        ? payloadData.appSettings
+        : {};
+
+      const currentAppSettings = this.safeParseJson(await this.safeGet('appSettings'), {});
+      const preservedEntitlement = currentAppSettings?.entitlement;
+      const mergedSettings = {
+        ...importedSettings,
+        ...(preservedEntitlement ? { entitlement: preservedEntitlement } : {})
+      };
+
+      await this.safeSet('videoPaths', JSON.stringify(normalizedVideoPaths));
+      await this.safeSet('userData', JSON.stringify(normalizedUserData));
+      await this.safeSet('appSettings', JSON.stringify(mergedSettings));
+
+      const noteCount = normalizedVideoPaths.reduce((count: number, pathObject: any) => {
+        const notes = Array.isArray(pathObject?.notes) ? pathObject.notes : [];
+        return count + notes.length;
+      }, 0);
+
+      return {
+        videoCount: normalizedVideoPaths.length,
+        noteCount
+      };
+    })());
   }
 
   /**
@@ -72,8 +152,8 @@ export class StorageService {
    * @Compatability Browser & Electron
    */
   public clearAllVideos() {
-    set('videos', '[]')
-    set('userData', '{}')
+    this.safeSet('videos', '[]')
+    this.safeSet('userData', '{}')
   }
 
   /**
@@ -81,8 +161,23 @@ export class StorageService {
    * @Compatability Electron only
    */
   public clearAllVideoPaths() {
-    set('videoPaths', '[]') // set('videoPaths', JSON.stringify(SavedPathsMock))
-    set('userData', '{}')
+    this.safeSet('videoPaths', '[]') // set('videoPaths', JSON.stringify(SavedPathsMock))
+    this.safeSet('userData', '{}')
+  }
+
+  /**
+   * Full reset: clears videos, video paths, user data, and app settings (including any
+   * saved entitlement), both in IndexedDB and the localStorage fallback. Callers must
+   * gate this behind an explicit user confirmation before invoking it.
+   * @Compatability Browser & Electron
+   */
+  public wipeAllAppData(): Observable<void> {
+    const keysToWipe = ['videos', 'videoPaths', 'userData', 'appSettings'];
+
+    return from(Promise.all(keysToWipe.map((key) => {
+      localStorage.removeItem(this.getFallbackStorageKey(key));
+      return this.safeSet(key, key === 'appSettings' || key === 'userData' ? '{}' : '[]');
+    })).then(() => undefined));
   }
 
   /**
@@ -93,7 +188,7 @@ export class StorageService {
    */
   private saveExtractedVideos(extractedVideoArray: SavedVideo[]): Observable<any> {
     // this.clearAllVideos()
-    return from(get('videos')
+    return from(this.safeGet('videos')
       .then((savedVideos: any) => {
         // TODO: clean this up
         if (!savedVideos) {
@@ -106,7 +201,7 @@ export class StorageService {
         }
         let tempList: SavedVideo[] = new Array()
         tempList = savedVideos.concat(extractedVideoArray)
-        return set('videos', JSON.stringify(tempList))
+        return this.safeSet('videos', JSON.stringify(tempList))
           .then(() => {
             return tempList
           })
@@ -121,7 +216,7 @@ export class StorageService {
    * @returns Observable<any>
    */
   saveExtractedVideoPaths(extractedVideoPathArray: SavedVideo[]): Observable<any> {
-    return from(get('videoPaths')
+    return from(this.safeGet('videoPaths')
       .then((savedVideoPaths: any) => {
         // TODO: clean this up
         if (!savedVideoPaths) {
@@ -135,7 +230,7 @@ export class StorageService {
         let tempList: SavedVideo[] = new Array()
         tempList = savedVideoPaths.concat(extractedVideoPathArray);
 
-        return set('videoPaths', JSON.stringify(tempList))
+        return this.safeSet('videoPaths', JSON.stringify(tempList))
           .then(() => {
             return tempList;
           })
@@ -145,24 +240,38 @@ export class StorageService {
 
 
   deleteVideoPathAtIndex(index: number){
-    return from(get('videoPaths')
+    return from(this.safeGet('videoPaths')
       .then((savedVideoPaths: any) => {
-        let mutatedArrayStringified = JSON.parse(savedVideoPaths).length > 1 ? JSON.stringify(JSON.parse(savedVideoPaths).splice(index, 1)) : JSON.stringify([]);
-        return set('videoPaths', mutatedArrayStringified)
-          .then((savedList) => {
+        const parsedPaths = savedVideoPaths ? JSON.parse(savedVideoPaths) : [];
+
+        if (!Array.isArray(parsedPaths) || index < 0 || index >= parsedPaths.length) {
+          return parsedPaths;
+        }
+
+        const updatedPaths = [...parsedPaths];
+        updatedPaths.splice(index, 1);
+
+        return this.safeSet('videoPaths', JSON.stringify(updatedPaths))
+          .then(() => {
             this.loadingService.hide();
-            return savedList;
+            return updatedPaths;
           })
       }
       ))
   }
 
-  saveNotesToVideoObject(index: number, notesArray: TimeSignatureObject[]) {
-    this.loadingService.show('Saving');
+  saveNotesToVideoObject(index: number, notesArray: TimeSignatureObject[], showLoading = true) {
+    // "Saving" spinner disabled: it duplicated the save toast.
+    // if (showLoading) {
+    //   this.loadingService.show('Saving');
+    // }
+
     this.getVideos().subscribe((videos: PathNotes[]) => {
       videos[index].notes = notesArray;
       this.updateVideoObject(videos).subscribe(() => {
-        this.loadingService.hide();
+        // if (showLoading) {
+        //   this.loadingService.hide();
+        // }
       });
     })
   }
@@ -175,11 +284,17 @@ export class StorageService {
   }
 
   private updateVideoObject(videos: PathNotes[]) {
-    return from(set('videoPaths', JSON.stringify(videos))
+    return from(this.safeSet('videoPaths', JSON.stringify(videos))
       .then(() => {
         // setting completed
         return of(videos)
       }))
+  }
+
+  // DEV_ONLY: This method is intended for development purposes to replace the entire video paths array with a new one. Use with caution. 
+  replaceVideoPaths(paths: PathNotes[]) {
+    const normalized = Array.isArray(paths) ? paths : [];
+    return from(this.safeSet('videoPaths', JSON.stringify(normalized)).then(() => normalized));
   }
 
   saveUploadedVideo(videoList: NgxFileDropEntry[]): Observable<any[]> {
@@ -209,9 +324,48 @@ export class StorageService {
     let memoryBytesToAdd = userFileSizes.reduce((accumulator, file) => accumulator + file.size, 0);
     this.getUserData().subscribe(
       (userData: UserData) => {
-        set('userData', JSON.stringify({ videoLengthUsed: (userData.videoLengthUsed | 0) + (userFileSizes.length + 0), videoStorageUsed: (userData.videoStorageUsed | 0) + (memoryBytesToAdd | 0) }))
+        this.safeSet('userData', JSON.stringify({ videoLengthUsed: (userData.videoLengthUsed | 0) + (userFileSizes.length + 0), videoStorageUsed: (userData.videoStorageUsed | 0) + (memoryBytesToAdd | 0) }))
       }
     )
+  }
+
+  private getFallbackStorageKey(key: string): string {
+    return `${this.fallbackStoragePrefix}${key}`;
+  }
+
+  private useFallbackStorage(error: any): boolean {
+    const errorMessage = String(error?.message || error || '');
+    return errorMessage.toLowerCase().includes('internal error opening backing store');
+  }
+
+  private async safeGet(key: string): Promise<any> {
+    const fallbackValue = localStorage.getItem(this.getFallbackStorageKey(key));
+
+    try {
+      const idbValue = await get(key);
+      if (idbValue === null || typeof idbValue === 'undefined') {
+        return fallbackValue;
+      }
+      return idbValue;
+    } catch (error) {
+      if (this.useFallbackStorage(error)) {
+        return fallbackValue;
+      }
+      throw error;
+    }
+  }
+
+  private async safeSet(key: string, value: string): Promise<void> {
+    localStorage.setItem(this.getFallbackStorageKey(key), value);
+
+    try {
+      await set(key, value);
+    } catch (error) {
+      if (this.useFallbackStorage(error)) {
+        return;
+      }
+      throw error;
+    }
   }
 
   // saveUserData_Paths(userFileSizes: any[]){
@@ -232,6 +386,67 @@ export class StorageService {
           console.error('LOG: Error invoking loadPremiumStatus:', error);
         })
       )
+  }
+
+  private safeParseJson(rawValue: any, fallback: any) {
+    if (typeof rawValue !== 'string' || !rawValue.trim()) {
+      return fallback;
+    }
+
+    try {
+      return JSON.parse(rawValue);
+    } catch {
+      return fallback;
+    }
+  }
+
+  private normalizeImportedUserData(input: any) {
+    const normalized = (input && typeof input === 'object') ? input : {};
+    return {
+      videoLengthUsed: Number(normalized.videoLengthUsed) || 0,
+      videoStorageUsed: Number(normalized.videoStorageUsed) || 0
+    };
+  }
+
+  private normalizeImportedPaths(input: any): PathNotes[] {
+    if (!Array.isArray(input)) {
+      return [];
+    }
+
+    return input
+      .map((entry: any) => {
+        const path = typeof entry?.path === 'string' ? entry.path.trim() : '';
+        if (!path) {
+          return null as PathNotes | null;
+        }
+
+        const normalizedNotes = Array.isArray(entry?.notes)
+          ? entry.notes
+            .map((note: any) => {
+              const timeSignature = note?.timeSignature;
+              const signatureAsString = typeof timeSignature === 'string'
+                ? timeSignature
+                : Number.isFinite(Number(timeSignature))
+                  ? String(Number(timeSignature))
+                  : '';
+              if (!signatureAsString) {
+                return null;
+              }
+
+              return {
+                timeSignature: signatureAsString,
+                notes: typeof note?.notes === 'string' ? note.notes : ''
+              } as Note;
+            })
+            .filter((note: any) => Boolean(note))
+          : [];
+
+        return {
+          path,
+          notes: normalizedNotes
+        } as PathNotes;
+      })
+        .filter((entry: PathNotes | null): entry is PathNotes => Boolean(entry));
   }
 
 }

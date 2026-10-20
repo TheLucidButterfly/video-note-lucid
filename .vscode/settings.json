@@ -1,3 +1,4 @@
 {
-    "css.completion.completePropertyWithSemicolon": false
+    "css.completion.completePropertyWithSemicolon": false,
+    "typescript.tsdk": "node_modules/typescript/lib"
 }

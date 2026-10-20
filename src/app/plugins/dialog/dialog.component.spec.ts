@@ -1,16 +1,22 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { FormsModule } from '@angular/forms';
+import { EntitlementService } from 'src/app/services/entitlement.service';
 
-import { NotesLimitDialogComponent } from './dialog.component';
+import { DialogComponent } from './dialog.component';
 
 describe('DialogComponent', () => {
-  let component: NotesLimitDialogComponent;
-  let fixture: ComponentFixture<NotesLimitDialogComponent>;
+  let component: DialogComponent;
+  let fixture: ComponentFixture<DialogComponent>;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      declarations: [NotesLimitDialogComponent]
+      imports: [FormsModule],
+      declarations: [DialogComponent],
+      providers: [
+        { provide: EntitlementService, useValue: { activateLicense: async () => ({ success: true, message: '' }), openCheckoutPage: () => {} } }
+      ]
     });
-    fixture = TestBed.createComponent(NotesLimitDialogComponent);
+    fixture = TestBed.createComponent(DialogComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

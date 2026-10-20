@@ -5,6 +5,14 @@
 <ng-container *ngIf="currentView === 'activateForm'">
   <ng-container *ngTemplateOutlet="activateFormTemplate"></ng-container>
 </ng-container>
+
+<ng-container *ngIf="currentView === 'confirm'">
+  <ng-container *ngTemplateOutlet="confirmTemplate"></ng-container>
+</ng-container>
+
+<ng-container *ngIf="currentView === 'wipeConfirm'">
+  <ng-container *ngTemplateOutlet="wipeConfirmTemplate"></ng-container>
+</ng-container>
   
   <ng-template #limitExceededTemplate>
     <div class="dialog-overlay" *ngIf="isDialogVisible">
@@ -41,7 +49,14 @@
   <ng-template #activateFormTemplate>
     <div class="dialog-overlay" *ngIf="isDialogVisible">
       <div class="dialog">
-        <h1>Activate Premium</h1>
+        <h1>{{ titleText }}</h1>
+        <p>{{ messageText }}</p>
+
+        <div *ngIf="!showActivateForm" class="dialog-buttons">
+          <button (click)="closeDialog()">Close</button>
+          <button class="btn-action" (click)="redirectToBuy()">Go to Payment Page</button>
+        </div>
+
         <div *ngIf="showActivateForm">
           <label for="activationCode">Enter Activation Code</label>
           <input 
@@ -53,16 +68,53 @@
           <div class="error-message" *ngIf="activationError">
             {{ activationError }}
           </div>
-        </div>
-    
-        <div class="dialog-buttons">
-          <button (click)="closeDialog()">Close</button>
-          <button *ngIf="!showActivateForm" (click)="openActivateForm()">Activate</button>
-          <button *ngIf="showActivateForm" (click)="validateKey()">Submit</button>
-          <button (click)="redirectToBuy()">Buy</button>
+
+          <div class="dialog-buttons">
+            <button class="btn-ghost" (click)="backToUpgradeOptions()">Back</button>
+            <button (click)="closeDialog()">Close</button>
+            <button class="btn-action" (click)="validateKey()">Submit</button>
+          </div>
         </div>
       </div>
     </div>
       
 
+  </ng-template>
+
+  <ng-template #confirmTemplate>
+    <div class="dialog-overlay" *ngIf="isDialogVisible">
+      <div class="dialog">
+        <h1>{{ titleText }}</h1>
+        <p>{{ messageText }}</p>
+
+        <div class="dialog-buttons">
+          <button *ngIf="showStay" class="btn-ghost" (click)="stayHere()">{{ stayText }}</button>
+          <button class="btn-cancel" (click)="confirmNo()">{{ cancelText }}</button>
+          <button class="btn-action" (click)="confirmYes()">{{ confirmText }}</button>
+        </div>
+      </div>
+    </div>
+  </ng-template>
+
+  <ng-template #wipeConfirmTemplate>
+    <div class="dialog-overlay" *ngIf="isDialogVisible">
+      <div class="dialog">
+        <h1>{{ titleText }}</h1>
+        <p>{{ messageText }}</p>
+
+        <label for="wipeConfirmationInput">Type the phrase below exactly to confirm:</label>
+        <p class="wipe-phrase">{{ wipeConfirmationPhrase }}</p>
+        <input
+          id="wipeConfirmationInput"
+          [(ngModel)]="wipeConfirmationInput"
+          type="text"
+          placeholder="Type the exact phrase here"
+          class="input-field">
+
+        <div class="dialog-buttons">
+          <button class="btn-ghost" (click)="closeDialog()">Cancel</button>
+          <button class="btn-cancel" [disabled]="!isWipeConfirmationValid()" (click)="confirmWipe()">{{ confirmText }}</button>
+        </div>
+      </div>
+    </div>
   </ng-template>

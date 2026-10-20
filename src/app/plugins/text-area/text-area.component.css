@@ -1,9 +1,21 @@
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+}
+
 .container-column {
   display: flex;
-  justify-content: center;
-  align-items: center;
+  justify-content: flex-start;
+  align-items: stretch;
   flex-direction: column;
   height: 100%;
+  width: 100%;
+  min-width: 0;
+  gap: 14px;
+  padding: 10px;
+  box-sizing: border-box;
 }
 
 .selectedSignature {
@@ -12,13 +24,71 @@
 
 .time-signature-list {
   display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  width: 95%;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  width: 100%;
+  flex: 0 0 185px;
+  min-height: 185px;
+  max-height: 185px;
+}
+
+.time-signature-items {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  flex-wrap: nowrap;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding-right: 10px;
 }
 
 .noteBarSignatureItem {
-  /* margin: 0px !important; */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin: 0;
+  padding: 6px 10px;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.05);
+  line-height: 1.15;
+  box-sizing: border-box;
+}
+
+.signature-time {
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.signature-preview {
+  font-size: 11px;
+  color: rgba(168, 224, 255, 0.95);
+  opacity: 0.95;
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.signature-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.signature-separator {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 11px;
 }
 
 .clickable {
@@ -28,20 +98,60 @@
 .text-area {
   background-color: black;
   color: white;
-  width: 720px;
-  overflow: hidden;
-  resize: none;
-  width: calc(51vw - 20px);
-  height: 100%;
+  width: 100%;
+  overflow: auto;
+  flex: 1 1 auto;
+  min-height: 0;
   resize: none;
 }
 
+.time-signature-items,
+.text-area {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(104, 121, 135, 0.88) rgba(255, 255, 255, 0.06);
+}
 
-::ng-deep   pagination-controls {
-    display: flex;
-    align-items: center;
-    flex-direction: row;
-  }
+.time-signature-items::-webkit-scrollbar,
+.text-area::-webkit-scrollbar {
+  width: 18px;
+  height: 18px;
+}
+
+.time-signature-items::-webkit-scrollbar-track,
+.text-area::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  margin-top: 6px;
+  margin-bottom: 6px;
+}
+
+.time-signature-items::-webkit-scrollbar-button,
+.text-area::-webkit-scrollbar-button {
+  display: none;
+  height: 0;
+  width: 0;
+}
+
+.time-signature-items::-webkit-scrollbar-thumb,
+.text-area::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(136, 154, 168, 0.95) 0%, rgba(95, 112, 126, 0.95) 100%);
+  border-radius: 999px;
+  border: 2px solid rgba(18, 18, 18, 0.95);
+}
+
+.time-signature-items::-webkit-scrollbar-thumb:hover,
+.text-area::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(166, 184, 198, 0.98) 0%, rgba(114, 131, 145, 0.98) 100%);
+}
+
+
+::ng-deep pagination-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-direction: row;
+  margin-left: auto;
+}
 
   ::ng-deep   .ngx-pagination a {
     color: white;
@@ -58,5 +168,13 @@
 }
 
 .selected-signature {
-  color:white;
+  color: white;
+  background-color: rgba(0, 139, 139, 0.18);
+  border: 1px solid rgba(0, 200, 200, 0.55) !important;
+  box-shadow: 0 0 0 2px rgba(0, 188, 188, 0.18);
+}
+
+.unsaved-signature {
+  border-left: 3px solid rgba(255, 185, 0, 0.85) !important;
+  background-color: rgba(255, 185, 0, 0.07);
 }

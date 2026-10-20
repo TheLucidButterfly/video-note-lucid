@@ -1,0 +1,40 @@
+<div class="video-text-page">
+  <div class="video-text-header">
+    <button class="header-button" (click)="backHome()">Back</button>
+    <div class="header-meta">
+      <h2>URL Video-to-Text</h2>
+      <span class="mode-label">Mode: {{ modeLabel }}</span>
+    </div>
+  </div>
+
+  <div class="source-url" *ngIf="sourceUrl">
+    Source URL: {{ sourceUrl }}
+  </div>
+
+  <div class="parse-status" *ngIf="isProcessing">Parsing transcript...</div>
+  <div class="parse-error" *ngIf="parseError">{{ parseError }}</div>
+
+  <div class="video-text-content" *ngIf="!isProcessing && parsedResult as result">
+    <div class="panel transcript-panel">
+      <h3>Transcript Chunks</h3>
+      <p class="panel-description">Chunked for readability. Not one timestamp per word.</p>
+      <div class="segment-list">
+        <div class="segment-item" *ngFor="let segment of result.segments">
+          <span class="segment-time">{{ formatTime(segment.startSec) }} - {{ formatTime(segment.endSec) }}</span>
+          <span class="segment-text">{{ segment.text }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel notes-panel">
+      <h3>Smart Notes</h3>
+      <p class="panel-description">Low-density summary notes generated from transcript groups.</p>
+      <div class="smart-note-list">
+        <div class="smart-note-item" *ngFor="let note of result.smartNotes">
+          <span class="smart-note-time">{{ formatTime(note.startSec) }}</span>
+          <span class="smart-note-text">{{ note.summary }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

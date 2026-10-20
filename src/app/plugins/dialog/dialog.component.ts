@@ -1,43 +1,89 @@
 // notes-limit-dialog.component.ts
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { ActivationResponse } from 'src/app/interfaces/activation-response.interface';
+import { EntitlementService } from 'src/app/services/entitlement.service';
 
 @Component({
-  selector: 'app-notes-limit-dialog',
+  selector: 'app-dialog',
   templateUrl:'./dialog.component.html',
   styleUrls: ['./dialog.component.css']
 })
-export class NotesLimitDialogComponent {
-  @Input() currentView: 'limitExceeded' | 'activateForm' = 'limitExceeded'; // Determines the current view
+export class DialogComponent {
+  @Input() currentView: 'limitExceeded' | 'activateForm' | 'confirm' | 'wipeConfirm' = 'limitExceeded'; // Determines the current view
+  @Input() titleText = 'Are you sure?';
+  @Input() messageText = '';
+  @Input() confirmText = 'Yes';
+  @Input() cancelText = 'No';
+  @Input() stayText = 'Stay';
+  @Input() showStay = false;
   @Output() dialogOpen = new EventEmitter();
+  @Output() confirmed = new EventEmitter<boolean>();
+  @Output() stayed = new EventEmitter<void>();
   
   isDialogVisible: boolean = true;
   showActivateForm: boolean = false;
   activationCode: string = '';
   activationError: string | null = null;
 
+  readonly wipeConfirmationPhrase = 'I wish to delete all my data on this app';
+  wipeConfirmationInput = '';
+
+  constructor(private entitlementService: EntitlementService) {}
+
+  ngOnInit() {}
+
   closeDialog() {
     this.isDialogVisible = false;
     this.dialogOpen.emit(false);
   }
 
+  confirmYes() {
+    this.confirmed.emit(true);
+    this.closeDialog();
+  }
+
+  confirmNo() {
+    this.confirmed.emit(false);
+    this.closeDialog();
+  }
+
+  stayHere() {
+    this.stayed.emit();
+  }
+
+  isWipeConfirmationValid(): boolean {
+    return this.wipeConfirmationInput === this.wipeConfirmationPhrase;
+  }
+
+  confirmWipe() {
+    if (!this.isWipeConfirmationValid()) {
+      return;
+    }
+    this.confirmed.emit(true);
+    this.closeDialog();
+  }
+
   redirectToBuy() {
-    window.open('https://your-site.com/upgrade', '_blank');
+    this.entitlementService.openCheckoutPage();
   }
 
   openActivateForm() {
     this.showActivateForm = true;
   }
 
-  validateKey() {
-    (window as any).license.activateKey(this.activationCode).then((activationResponse: ActivationResponse) => {
-      console.log(activationResponse)
-      if (activationResponse.success) {
-        this.closeDialog()
-        console.log('License is valid!');
-      } else {
-        alert('Error validating key:'+activationResponse.message);
-      }
-    });
+  backToUpgradeOptions() {
+    this.showActivateForm = false;
+    this.activationError = null;
+  }
+
+  async validateKey() {
+    this.activationError = null;
+    const activationResponse: ActivationResponse = await this.entitlementService.activateLicense(this.activationCode);
+    if (activationResponse.success) {
+      this.closeDialog();
+      return;
+    }
+
+    this.activationError = activationResponse.message;
   }
 }
