@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { NgxFileDropEntry, FileSystemFileEntry } from 'ngx-file-drop';
 import { StorageService } from '../../services/storage-service.service';
-import { finalize } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 import { LoadingNotificationService } from 'src/app/services/loading-notification/loading-notification.service';
 import { UserData } from 'src/app/interfaces/user-data.interface';
 import { environment, uploadModes } from 'src/environments/environment';
@@ -33,6 +33,10 @@ export class InfoComponent {
   uploadedFileNames: string[] = []
   savedFileCount = 0;
   savedNoteCount = 0;
+  showWipeDialog = false;
+  migrationPayload = '';
+  migrationStatus = '';
+  migrationError = '';
 
   constructor(
     private router: Router,
@@ -95,6 +99,80 @@ export class InfoComponent {
         this.userData = userData;
       }
     )
+  }
+
+  requestWipeAllData() {
+    this.showWipeDialog = true;
+  }
+
+  handleWipeConfirmation(confirmed: boolean) {
+    this.showWipeDialog = false;
+    if (!confirmed) {
+      return;
+    }
+
+    this.storageService.wipeAllAppData().subscribe(() => {
+      this.loadInfoPageData();
+    });
+  }
+
+  async exportMigrationData() {
+    this.migrationError = '';
+    this.migrationStatus = '';
+
+    try {
+      const payload = await firstValueFrom(this.storageService.exportMigrationPayload());
+      this.migrationPayload = payload || '';
+      await this.copyTextToClipboard(this.migrationPayload);
+      this.migrationStatus = 'Migration data copied to clipboard.';
+    } catch (error: any) {
+      this.migrationError = error?.message || 'Failed to export migration data.';
+    }
+  }
+
+  async importMigrationData() {
+    this.migrationError = '';
+    this.migrationStatus = '';
+
+    const payloadText = (this.migrationPayload || '').trim();
+    if (!payloadText) {
+      this.migrationError = 'Paste migration JSON before importing.';
+      return;
+    }
+
+    try {
+      const result = await firstValueFrom(this.storageService.importMigrationPayload(payloadText));
+      this.loadInfoPageData();
+      this.migrationStatus = `Imported ${result?.videoCount || 0} videos and ${result?.noteCount || 0} notes.`;
+    } catch (error: any) {
+      this.migrationError = error?.message || 'Failed to import migration data.';
+    }
+  }
+
+  clearMigrationText() {
+    this.migrationPayload = '';
+    this.migrationError = '';
+    this.migrationStatus = '';
+  }
+
+  private async copyTextToClipboard(value: string) {
+    if (!value) {
+      return;
+    }
+
+    const clipboardApi = (navigator as any)?.clipboard;
+    if (clipboardApi?.writeText) {
+      await clipboardApi.writeText(value);
+      return;
+    }
+
+    // Fallback for environments without clipboard API support.
+    const helperTextArea = document.createElement('textarea');
+    helperTextArea.value = value;
+    document.body.appendChild(helperTextArea);
+    helperTextArea.select();
+    document.execCommand('copy');
+    document.body.removeChild(helperTextArea);
   }
 
   // TODO: rewrite to audit global files

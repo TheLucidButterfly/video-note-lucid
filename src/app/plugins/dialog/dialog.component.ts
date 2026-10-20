@@ -9,7 +9,7 @@ import { EntitlementService } from 'src/app/services/entitlement.service';
   styleUrls: ['./dialog.component.css']
 })
 export class DialogComponent {
-  @Input() currentView: 'limitExceeded' | 'activateForm' | 'confirm' = 'limitExceeded'; // Determines the current view
+  @Input() currentView: 'limitExceeded' | 'activateForm' | 'confirm' | 'wipeConfirm' = 'limitExceeded'; // Determines the current view
   @Input() titleText = 'Are you sure?';
   @Input() messageText = '';
   @Input() confirmText = 'Yes';
@@ -25,13 +25,12 @@ export class DialogComponent {
   activationCode: string = '';
   activationError: string | null = null;
 
+  readonly wipeConfirmationPhrase = 'I wish to delete all my data on this app';
+  wipeConfirmationInput = '';
+
   constructor(private entitlementService: EntitlementService) {}
 
-  ngOnInit() {
-    if (this.currentView === 'activateForm') {
-      this.showActivateForm = true;
-    }
-  }
+  ngOnInit() {}
 
   closeDialog() {
     this.isDialogVisible = false;
@@ -52,12 +51,29 @@ export class DialogComponent {
     this.stayed.emit();
   }
 
+  isWipeConfirmationValid(): boolean {
+    return this.wipeConfirmationInput === this.wipeConfirmationPhrase;
+  }
+
+  confirmWipe() {
+    if (!this.isWipeConfirmationValid()) {
+      return;
+    }
+    this.confirmed.emit(true);
+    this.closeDialog();
+  }
+
   redirectToBuy() {
     this.entitlementService.openCheckoutPage();
   }
 
   openActivateForm() {
     this.showActivateForm = true;
+  }
+
+  backToUpgradeOptions() {
+    this.showActivateForm = false;
+    this.activationError = null;
   }
 
   async validateKey() {

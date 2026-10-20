@@ -73,3 +73,25 @@
     color: red;
     font-size: 0.9em;
   }
+  .wipe-phrase {
+    font-weight: 600;
+    color: rgba(255, 120, 120, 0.95);
+    user-select: text;
+  }
+  .activation-code-link {
+    text-align: center;
+    margin-top: 14px;
+    font-size: 0.85em;
+  }
+  .activation-code-link a {
+    color: rgba(255, 255, 255, 0.55);
+    cursor: pointer;
+    text-decoration: underline;
+  }
+  .activation-code-link a:hover {
+    color: rgba(255, 255, 255, 0.8);
+  }
+  .dialog-buttons button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }

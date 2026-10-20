@@ -12,7 +12,12 @@
     </div>
   </div>
 </div> -->
-<app-dialog *ngIf="showDialog" [currentView]="'activateForm'" (dialogOpen)="showDialog = $event"></app-dialog>
+<app-dialog
+  *ngIf="showDialog"
+  [currentView]="'activateForm'"
+  [titleText]="'Upgrade to Premium'"
+  [messageText]="'You are on the trial plan, limited to a small number of videos and notes per video. Upgrade to unlock unlimited videos and notes.'"
+  (dialogOpen)="showDialog = $event"></app-dialog>
 <app-dialog
   *ngIf="showDeleteDialog"
   [currentView]="'confirm'"
@@ -56,13 +61,13 @@
       <span (click)="navigateToDevTools()" class="savedAllDataButton clickable">View Saved Data</span>
       <br>
     </ng-container>
-    <span *ngIf="!centralService.isPremiumUser()" (click)="showDialog = true" class="activateButton clickable">Activate</span>
+    <span *ngIf="!centralService.isPremiumUser()" (click)="showDialog = true" class="activateButton clickable">Upgrade</span>
   </div>
   <div class="home-toolbar">
     <button class="add-video-button clickable" (click)="openUploader()">+ Add Video</button>
     <div class="home-toolbar-actions">
       <button *ngIf="settingsPageEnabled" class="info-link-button clickable" (click)="navigateToSettingsPage()">Settings</button>
-      <button class="info-link-button clickable" (click)="navigateToInfoPage()">Info & Support</button>
+      <button class="info-link-button clickable" (click)="navigateToInfoPage()">Settings and Info</button>
     </div>
   </div>
   <div *ngIf="loading" class="home-loading-hint">Loading video references...</div>

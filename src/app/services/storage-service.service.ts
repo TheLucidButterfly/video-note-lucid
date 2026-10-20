@@ -77,6 +77,76 @@ export class StorageService {
     return from(this.safeSet('appSettings', JSON.stringify(normalizedSettings)).then(() => normalizedSettings));
   }
 
+  public exportMigrationPayload() {
+    return from(Promise.all([
+      this.safeGet('videoPaths'),
+      this.safeGet('userData'),
+      this.safeGet('appSettings')
+    ]).then(([savedPathsRaw, userDataRaw, appSettingsRaw]) => {
+      const savedPaths = this.safeParseJson(savedPathsRaw, []);
+      const userData = this.safeParseJson(userDataRaw, {});
+      const appSettings = this.safeParseJson(appSettingsRaw, {});
+
+      const portableSettings = (appSettings && typeof appSettings === 'object')
+        ? { ...(appSettings as Record<string, any>) }
+        : {};
+      delete (portableSettings as any).entitlement;
+
+      const payload = {
+        schemaVersion: 1,
+        exportedAt: new Date().toISOString(),
+        data: {
+          videoPaths: this.normalizeImportedPaths(savedPaths),
+          userData: this.normalizeImportedUserData(userData),
+          appSettings: portableSettings
+        }
+      };
+
+      return JSON.stringify(payload, null, 2);
+    }));
+  }
+
+  public importMigrationPayload(payloadText: string) {
+    return from((async () => {
+      const parsedPayload = this.safeParseJson(payloadText, null);
+      if (!parsedPayload || typeof parsedPayload !== 'object') {
+        throw new Error('Invalid migration payload format.');
+      }
+
+      const payloadData = (parsedPayload as any).data;
+      if (!payloadData || typeof payloadData !== 'object') {
+        throw new Error('Migration payload is missing a data object.');
+      }
+
+      const normalizedVideoPaths = this.normalizeImportedPaths(payloadData.videoPaths);
+      const normalizedUserData = this.normalizeImportedUserData(payloadData.userData);
+      const importedSettings = payloadData.appSettings && typeof payloadData.appSettings === 'object'
+        ? payloadData.appSettings
+        : {};
+
+      const currentAppSettings = this.safeParseJson(await this.safeGet('appSettings'), {});
+      const preservedEntitlement = currentAppSettings?.entitlement;
+      const mergedSettings = {
+        ...importedSettings,
+        ...(preservedEntitlement ? { entitlement: preservedEntitlement } : {})
+      };
+
+      await this.safeSet('videoPaths', JSON.stringify(normalizedVideoPaths));
+      await this.safeSet('userData', JSON.stringify(normalizedUserData));
+      await this.safeSet('appSettings', JSON.stringify(mergedSettings));
+
+      const noteCount = normalizedVideoPaths.reduce((count: number, pathObject: any) => {
+        const notes = Array.isArray(pathObject?.notes) ? pathObject.notes : [];
+        return count + notes.length;
+      }, 0);
+
+      return {
+        videoCount: normalizedVideoPaths.length,
+        noteCount
+      };
+    })());
+  }
+
   /**
    * Set the localstorage initial values for saved-video method
    * @Compatability Browser & Electron
@@ -93,6 +163,21 @@ export class StorageService {
   public clearAllVideoPaths() {
     this.safeSet('videoPaths', '[]') // set('videoPaths', JSON.stringify(SavedPathsMock))
     this.safeSet('userData', '{}')
+  }
+
+  /**
+   * Full reset: clears videos, video paths, user data, and app settings (including any
+   * saved entitlement), both in IndexedDB and the localStorage fallback. Callers must
+   * gate this behind an explicit user confirmation before invoking it.
+   * @Compatability Browser & Electron
+   */
+  public wipeAllAppData(): Observable<void> {
+    const keysToWipe = ['videos', 'videoPaths', 'userData', 'appSettings'];
+
+    return from(Promise.all(keysToWipe.map((key) => {
+      localStorage.removeItem(this.getFallbackStorageKey(key));
+      return this.safeSet(key, key === 'appSettings' || key === 'userData' ? '{}' : '[]');
+    })).then(() => undefined));
   }
 
   /**
@@ -301,6 +386,67 @@ export class StorageService {
           console.error('LOG: Error invoking loadPremiumStatus:', error);
         })
       )
+  }
+
+  private safeParseJson(rawValue: any, fallback: any) {
+    if (typeof rawValue !== 'string' || !rawValue.trim()) {
+      return fallback;
+    }
+
+    try {
+      return JSON.parse(rawValue);
+    } catch {
+      return fallback;
+    }
+  }
+
+  private normalizeImportedUserData(input: any) {
+    const normalized = (input && typeof input === 'object') ? input : {};
+    return {
+      videoLengthUsed: Number(normalized.videoLengthUsed) || 0,
+      videoStorageUsed: Number(normalized.videoStorageUsed) || 0
+    };
+  }
+
+  private normalizeImportedPaths(input: any): PathNotes[] {
+    if (!Array.isArray(input)) {
+      return [];
+    }
+
+    return input
+      .map((entry: any) => {
+        const path = typeof entry?.path === 'string' ? entry.path.trim() : '';
+        if (!path) {
+          return null as PathNotes | null;
+        }
+
+        const normalizedNotes = Array.isArray(entry?.notes)
+          ? entry.notes
+            .map((note: any) => {
+              const timeSignature = note?.timeSignature;
+              const signatureAsString = typeof timeSignature === 'string'
+                ? timeSignature
+                : Number.isFinite(Number(timeSignature))
+                  ? String(Number(timeSignature))
+                  : '';
+              if (!signatureAsString) {
+                return null;
+              }
+
+              return {
+                timeSignature: signatureAsString,
+                notes: typeof note?.notes === 'string' ? note.notes : ''
+              } as Note;
+            })
+            .filter((note: any) => Boolean(note))
+          : [];
+
+        return {
+          path,
+          notes: normalizedNotes
+        } as PathNotes;
+      })
+        .filter((entry: PathNotes | null): entry is PathNotes => Boolean(entry));
   }
 
 }
